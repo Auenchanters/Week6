@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # The repository keeps a single branch, so version-update pull requests are off (limit 0).
+  # Security alerts still appear, and security updates have their own limit.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

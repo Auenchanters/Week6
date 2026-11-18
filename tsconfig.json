@@ -1,0 +1,15 @@
+{
+  // Three type-check projects, run together by `tsc -b`. Each one sees only the globals its code
+  // may use: `app` is the browser code in src/ (DOM libs, no `node` types, so `process` is an
+  // error there), `node` is the API, scripts and root config files (`node` types, no DOM), and
+  // `test` is everything under tests/. Tests get both the DOM libs and `node` types because they
+  // render into jsdom or a browser page and also run in Node, and vitest's own types pull in
+  // `node` globally, so a test file in the `app` project would make `process` legal in src/.
+  // `tsconfig.base.json` holds the shared strictness; `tsconfig.server.json` is the emit build.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
+}

@@ -1,0 +1,17 @@
+title = "Clearday repository and history secret detection"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "google-aq-api-key"
+description = "Google API credential using the AQ prefix"
+regex = '''(AQ\.[A-Za-z0-9_-]{30,})'''
+secretGroup = 1
+keywords = ["AQ."]
+
+# The browser storage key name ("clearday.v1") matches the generic key rule by shape and
+# entropy, but it is an identifier, not a credential.
+[[allowlists]]
+description = "localStorage key name"
+regexes = ['''^clearday\.v\d+$''']
