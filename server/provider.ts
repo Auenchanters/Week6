@@ -3,8 +3,9 @@
  * Does: build the SDK client once, ask for schema-constrained JSON with bounded output and minimal
  * thinking, pass the request's abort signal through, and report token usage and whether the
  * answer hit the output cap.
- * Retries exactly once, after a short pause, when Gemini answers 503 (model overloaded): that
- * refusal is transient and is not billed. Anything else is never retried.
+ * Retries exactly once, after a short pause, when Gemini answers 503 (model overloaded) within a
+ * few seconds: that refusal is transient and not billed, and a quick one leaves room for a second
+ * 25-second call inside the function's 30-second limit. Anything else is never retried.
  * Never does: retry inside the SDK (attempts = 1), log model text, or interpret errors; the
  * handler classifies them without ever echoing their messages.
  */
@@ -34,6 +35,8 @@ const TEMPERATURE = 0.7;
 /** Gemini's "model overloaded" status, and how long to wait before the one retry it earns. */
 const OVERLOADED = 503;
 const OVERLOAD_PAUSE_MS = 1500;
+/** A refusal slower than this leaves no room for a second call inside the 30-second limit. */
+const RETRY_WINDOW_MS = 3000;
 
 /**
  * A generator for `model`. The client is created here, once, and reused by every call.
@@ -61,10 +64,12 @@ export function createGeminiGenerator(apiKey: string, model: string): Generate {
     });
   return async (prompt, signal) => {
     let response;
+    const started = Date.now();
     try {
       response = await call(prompt, signal);
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === OVERLOADED)) throw error;
+      const overloaded = error instanceof ApiError && error.status === OVERLOADED;
+      if (!overloaded || Date.now() - started > RETRY_WINDOW_MS) throw error;
       await new Promise((resolve) => setTimeout(resolve, OVERLOAD_PAUSE_MS));
       signal.throwIfAborted();
       response = await call(prompt, signal);

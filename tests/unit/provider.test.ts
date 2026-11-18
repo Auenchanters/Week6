@@ -139,6 +139,22 @@ describe('createGeminiGenerator', () => {
       expect(mocks.generateContent).toHaveBeenCalledOnce();
     });
 
+    it('does not retry a refusal that took too long to arrive', async () => {
+      mocks.generateContent.mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(overloaded());
+            }, 4000);
+          }),
+      );
+      const pending = createGeminiGenerator('k', 'm')(prompt, new AbortController().signal);
+      const settled = expect(pending).rejects.toMatchObject({ status: 503 });
+      await vi.advanceTimersByTimeAsync(6000);
+      await settled;
+      expect(mocks.generateContent).toHaveBeenCalledOnce();
+    });
+
     it('never retries any other failure', async () => {
       mocks.generateContent.mockRejectedValueOnce(new ApiError({ message: 'bad', status: 400 }));
       await expect(
