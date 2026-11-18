@@ -46,11 +46,15 @@ export async function prepare(page: Page): Promise<Recorded> {
     if (message.type() === 'error') recorded.errors.push(message.text());
   });
   await page.route('**/*', async (route) => {
-    const response = await route.fetch();
-    await route.fulfill({
-      response,
-      headers: { ...response.headers(), 'content-security-policy': CSP ?? '' },
-    });
+    try {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        headers: { ...response.headers(), 'content-security-policy': CSP ?? '' },
+      });
+    } catch {
+      // The test finished while this request (a late chunk) was in flight; nothing awaits it.
+    }
   });
   // Registered last, so it runs before the catch-all above.
   await page.route('**/api/**', async (route) => {

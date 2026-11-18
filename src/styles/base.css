@@ -326,13 +326,6 @@ input[aria-invalid='true'] {
   font-weight: 600;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .btn,
-  .chip--button {
-    transition: background-color 0.15s ease;
-  }
-}
-
 @media (forced-colors: active) {
   .btn--primary,
   .chip--button[aria-pressed='true'] {
