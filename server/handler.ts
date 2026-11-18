@@ -102,6 +102,15 @@ function modelFailure(error: unknown): ErrorCode {
   return 'AI_UNAVAILABLE';
 }
 
+/** The provider's HTTP status for a failed call, for the log only; never its message. */
+function providerStatus(error: unknown): number | undefined {
+  try {
+    return error instanceof ApiError ? error.status : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** The public error for anything thrown while handling `request`; a client abort wins. */
 function toAppError(error: unknown, request: Request): AppError {
   if (request.signal.aborted) return new AppError('REQUEST_CANCELLED');
@@ -150,7 +159,10 @@ export function createHandler(
     try {
       generation = await withCapacity(() => generate(prompt, request.signal));
     } catch (error) {
-      throw error instanceof AppError ? error : new AppError(modelFailure(error));
+      if (error instanceof AppError) throw error;
+      const status = providerStatus(error);
+      if (status !== undefined) trace.providerStatus = status;
+      throw new AppError(modelFailure(error));
     }
     const latencyMs = Math.round(performance.now() - started);
     const { inputTokens, outputTokens } = generation;

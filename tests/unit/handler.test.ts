@@ -561,6 +561,14 @@ describe('POST /api/plan: the model call', () => {
     expect(await response.clone().text()).not.toMatch(/exploded|upstream|oops/u);
   });
 
+  it('logs the provider status of a failed call, and never its message', async () => {
+    await handlerWith({
+      generate: failing(new ApiError({ message: 'upstream secret', status: 404 })),
+    })(plan());
+    expect(lastRequestLog(error)).toMatchObject({ code: 'AI_UNAVAILABLE', providerStatus: 404 });
+    expect(JSON.stringify(lastRequestLog(error))).not.toContain('upstream secret');
+  });
+
   it('502 AI_UNAVAILABLE, not a 500, for an error that cannot be inspected', async () => {
     const hostile = new Proxy(new ApiError({ message: 'x', status: 429 }), {
       get() {

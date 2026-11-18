@@ -24,6 +24,8 @@ export interface RequestFacts {
   outputTokens?: number;
   /** Items of the model's answer left out because they failed the schema; absent when none. */
   dropped?: number;
+  /** The model provider's HTTP status when a call failed (a number only, never its message). */
+  providerStatus?: number;
 }
 
 /** Everything a request log line may hold. */
