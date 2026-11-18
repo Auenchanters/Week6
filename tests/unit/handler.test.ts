@@ -529,11 +529,11 @@ describe('POST /api/plan: the model call', () => {
     expect(generate).toHaveBeenCalledTimes(202);
   });
 
-  it('503 AI_BUSY with Retry-After for a spent quota (ApiError 429)', async () => {
-    const quota = new ApiError({
-      message: 'RESOURCE_EXHAUSTED project quota key=SECRET',
-      status: 429,
-    });
+  it.each([
+    ['a spent quota', 429],
+    ['an overloaded model', 503],
+  ])('503 AI_BUSY with Retry-After for %s (ApiError %i)', async (_name, status) => {
+    const quota = new ApiError({ message: 'RESOURCE_EXHAUSTED project quota key=SECRET', status });
     const response = await handlerWith({ generate: failing(quota) })(plan());
     expect(response.status).toBe(503);
     expect(response.headers.get('retry-after')).toBe('60');

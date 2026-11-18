@@ -89,10 +89,10 @@ costs.
 
 ## Google services
 
-| Service                                               | Use                                                                                                                                                      |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gemini** (`gemini-3.5-flash-lite`, `@google/genai`) | personal advice and grounded Q&A, structured JSON output whose fact citations the server checks item by item, minimal thinking, 25 s timeout, no retries |
-| **Google AI Studio**                                  | API key management for Gemini                                                                                                                            |
+| Service                                               | Use                                                                                                                                                                                             |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gemini** (`gemini-3.5-flash-lite`, `@google/genai`) | personal advice and grounded Q&A, structured JSON output whose fact citations the server checks item by item, minimal thinking, 25 s timeout, one retry only when the model is overloaded (503) |
+| **Google AI Studio**                                  | API key management for Gemini                                                                                                                                                                   |
 
 ## Run it locally
 

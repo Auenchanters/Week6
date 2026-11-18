@@ -60,16 +60,16 @@ comparable and trade-offs (lungs vs CO2) are visible instead of netted.
 
 ## Server ([`server/`](../server))
 
-| Module                 | Responsibility                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| `server/handler.ts`    | routing, gates, answer cache, model call, one log line per request             |
-| `server/request.ts`    | content type, origin allowlist, bounded body, strict schema                    |
-| `server/air.ts`        | Open-Meteo client: validation, gap filling, 30-minute cache, sample fallback   |
-| `server/answer.ts`     | per-item salvage of the model's JSON, sanitizing, cite checking                |
-| `server/provider.ts`   | the Gemini SDK call: JSON schema output, minimal thinking, timeout, no retries |
-| `server/rate-limit.ts` | per-client and daily quotas, shared through Upstash when configured            |
-| `server/capacity.ts`   | at most three model calls in flight per instance                               |
-| `server/errors.ts`     | the one catalog of public errors                                               |
+| Module                 | Responsibility                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `server/handler.ts`    | routing, gates, answer cache, model call, one log line per request                            |
+| `server/request.ts`    | content type, origin allowlist, bounded body, strict schema                                   |
+| `server/air.ts`        | Open-Meteo client: validation, gap filling, 30-minute cache, sample fallback                  |
+| `server/answer.ts`     | per-item salvage of the model's JSON, sanitizing, cite checking                               |
+| `server/provider.ts`   | the Gemini SDK call: JSON schema output, minimal thinking, timeout, one retry on 503 overload |
+| `server/rate-limit.ts` | per-client and daily quotas, shared through Upstash when configured                           |
+| `server/capacity.ts`   | at most three model calls in flight per instance                                              |
+| `server/errors.ts`     | the one catalog of public errors                                                              |
 
 ## Model-call budget
 

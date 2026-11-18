@@ -3,8 +3,8 @@
  * Does: pins the request config (structured JSON, fixed instruction, bounded output, minimal
  * thinking, abort propagation), the one-time client construction and the token mapping.
  */
-import { FinishReason, ThinkingLevel } from '@google/genai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError, FinishReason, ThinkingLevel } from '@google/genai';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createGeminiGenerator } from '../../server/provider.js';
 import type { Prompt } from '../../src/ai/prompt.js';
 
@@ -104,5 +104,47 @@ describe('createGeminiGenerator', () => {
     mocks.generateContent.mockRejectedValue(failure);
     const generate = createGeminiGenerator('test-key-not-a-secret', 'm');
     await expect(generate(prompt, new AbortController().signal)).rejects.toBe(failure);
+  });
+
+  describe('when Gemini is overloaded (503)', () => {
+    const overloaded = () => new ApiError({ message: 'overloaded', status: 503 });
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('retries once after a pause and returns the second answer', async () => {
+      mocks.generateContent.mockRejectedValueOnce(overloaded());
+      const pending = createGeminiGenerator('k', 'm')(prompt, new AbortController().signal);
+      await vi.advanceTimersByTimeAsync(1500);
+      await expect(pending).resolves.toMatchObject({ inputTokens: 271 });
+      expect(mocks.generateContent).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives up after the one retry', async () => {
+      mocks.generateContent.mockRejectedValue(overloaded());
+      const pending = createGeminiGenerator('k', 'm')(prompt, new AbortController().signal);
+      const settled = expect(pending).rejects.toMatchObject({ status: 503 });
+      await vi.advanceTimersByTimeAsync(1500);
+      await settled;
+      expect(mocks.generateContent).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry once the caller has gone', async () => {
+      mocks.generateContent.mockRejectedValueOnce(overloaded());
+      const controller = new AbortController();
+      const pending = createGeminiGenerator('k', 'm')(prompt, controller.signal);
+      const settled = expect(pending).rejects.toBeDefined();
+      controller.abort();
+      await vi.advanceTimersByTimeAsync(1500);
+      await settled;
+      expect(mocks.generateContent).toHaveBeenCalledOnce();
+    });
+
+    it('never retries any other failure', async () => {
+      mocks.generateContent.mockRejectedValueOnce(new ApiError({ message: 'bad', status: 400 }));
+      await expect(
+        createGeminiGenerator('k', 'm')(prompt, new AbortController().signal),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(mocks.generateContent).toHaveBeenCalledOnce();
+    });
   });
 });

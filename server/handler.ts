@@ -81,8 +81,9 @@ export interface HandlerOptions {
 /** Facts about a request gathered for its log line as handling proceeds. */
 type Trace = RequestFacts;
 
-/** Quota exhaustion: the SDK throws its `ApiError` with the HTTP status, 429 for a spent quota. */
-const isBusy = (error: unknown): boolean => error instanceof ApiError && error.status === 429;
+/** A busy provider: the SDK's `ApiError` with 429 (quota spent) or 503 (model overloaded). */
+const isBusy = (error: unknown): boolean =>
+  error instanceof ApiError && (error.status === 429 || error.status === 503);
 
 /** The SDK's own timeout aborts its fetch, which rejects with an AbortError. */
 const isTimeout = (error: unknown): boolean =>

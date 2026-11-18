@@ -3,10 +3,12 @@
  * Does: build the SDK client once, ask for schema-constrained JSON with bounded output and minimal
  * thinking, pass the request's abort signal through, and report token usage and whether the
  * answer hit the output cap.
- * Never does: retry (SDK attempts = 1, and no re-call here), log model text, or interpret errors;
- * the handler classifies them without ever echoing their messages.
+ * Retries exactly once, after a short pause, when Gemini answers 503 (model overloaded): that
+ * refusal is transient and is not billed. Anything else is never retried.
+ * Never does: retry inside the SDK (attempts = 1), log model text, or interpret errors; the
+ * handler classifies them without ever echoing their messages.
  */
-import { FinishReason, GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { ApiError, FinishReason, GoogleGenAI, ThinkingLevel } from '@google/genai';
 import type { Prompt } from '../src/ai/prompt.js';
 
 /** What one model call returns. */
@@ -29,6 +31,9 @@ const TIMEOUT_MS = 25_000;
  */
 const MAX_OUTPUT_TOKENS = 4096;
 const TEMPERATURE = 0.7;
+/** Gemini's "model overloaded" status, and how long to wait before the one retry it earns. */
+const OVERLOADED = 503;
+const OVERLOAD_PAUSE_MS = 1500;
 
 /**
  * A generator for `model`. The client is created here, once, and reused by every call.
@@ -40,8 +45,8 @@ export function createGeminiGenerator(apiKey: string, model: string): Generate {
     apiKey,
     httpOptions: { timeout: TIMEOUT_MS, retryOptions: { attempts: 1 } },
   });
-  return async (prompt, signal) => {
-    const response = await client.models.generateContent({
+  const call = (prompt: Prompt, signal: AbortSignal) =>
+    client.models.generateContent({
       model,
       contents: prompt.user,
       config: {
@@ -54,6 +59,16 @@ export function createGeminiGenerator(apiKey: string, model: string): Generate {
         abortSignal: signal,
       },
     });
+  return async (prompt, signal) => {
+    let response;
+    try {
+      response = await call(prompt, signal);
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === OVERLOADED)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, OVERLOAD_PAUSE_MS));
+      signal.throwIfAborted();
+      response = await call(prompt, signal);
+    }
     const usage = response.usageMetadata;
     return {
       text: response.text ?? '',
