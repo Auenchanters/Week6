@@ -23,8 +23,9 @@
 3. Only "Get personal advice" and "Ask Clearday" call Gemini. The server **re-runs the same
    engine** on the validated request, so the facts in the prompt are computed server-side from
    numbers, never taken from client-supplied text.
-4. The response schema's `cites` enum is the plan's own fact ids; the server drops any item that
-   fails the schema, item by item, and reports how many it dropped.
+4. The model must cite the plan's fact ids. Gemini is given a shape-only schema (it rejects one with
+   a fact-id enum in every list), and the server validates each item against the plan's own ids,
+   drops any that fail, and reports how many it dropped.
 
 ## Layers (enforced by [`tests/unit/architecture.test.ts`](../tests/unit/architecture.test.ts))
 

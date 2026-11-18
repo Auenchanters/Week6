@@ -16,6 +16,7 @@ import {
   factIds,
 } from '../../src/ai/prompt.js';
 import { buildDayPlan } from '../../src/domain/plan.js';
+import { LIMITS } from '../../src/shared/limits.js';
 import { SAMPLE_PROFILE } from '../../src/shared/samples.js';
 import { LANGUAGES, type Language, type Profile } from '../../src/shared/schema.js';
 import { sanitizeText } from '../../src/shared/sanitize-text.js';
@@ -193,15 +194,20 @@ describe('factIds', () => {
 });
 
 describe('the response schema', () => {
-  it('limits every advice cite to the plan facts, air.day first', () => {
-    const enums = enumsIn(buildAdvicePrompt(plan, SAMPLE_PROFILE).schema);
-    expect(enums).toHaveLength(3);
-    for (const values of enums) expect(values).toEqual([...factIds(plan)]);
+  it('is shape-only, so Gemini accepts it: no enums and no length or count caps', () => {
+    for (const schema of [
+      buildAdvicePrompt(plan, SAMPLE_PROFILE).schema,
+      buildAskPrompt(plan, SAMPLE_PROFILE, 'Is it safe?').schema,
+    ]) {
+      expect(enumsIn(schema)).toEqual([]);
+      expect(JSON.stringify(schema)).not.toMatch(/maxLength|minLength|maxItems|minItems/u);
+    }
   });
 
-  it('limits the answer cites the same way', () => {
-    const enums = enumsIn(buildAskPrompt(plan, SAMPLE_PROFILE, 'Is it safe?').schema);
-    expect(enums).toEqual([[...factIds(plan)]]);
+  it('states the caps the server enforces in the instructions instead', () => {
+    expect(ADVICE_INSTRUCTION).toContain(String(LIMITS.ai.noteMax));
+    expect(ADVICE_INSTRUCTION).toContain(String(LIMITS.ai.notesMax));
+    expect(ASK_INSTRUCTION).toContain(String(LIMITS.ai.answerMax));
   });
 
   it('asks for the advice sections and the answer', () => {

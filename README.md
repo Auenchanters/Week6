@@ -46,9 +46,8 @@ costs.
    Clearday shows both.
 3. **AI where it adds value.** Gemini personalizes: it prioritizes the most sensitive people,
    explains why a change matters for _this_ family, writes in their language and answers follow-up
-   questions. It receives the engine's results as numbered facts, and its response schema only
-   allows citing those fact ids. The server checks every item and drops any that cite anything
-   else.
+   questions. It receives the engine's results as numbered facts and must cite their ids. The
+   server checks every item and drops any that cite anything else.
 4. **Zero-cost interaction.** The engine runs in the browser, so switching days, editing the
    household and every what-if recompute instantly with no AI call.
 
@@ -66,8 +65,9 @@ costs.
    cleanest window, a card per person (dose now vs with the plan, precautions), the re-planned day,
    home what-ifs and the choices ledger sorted by lungs or climate.
 5. **AI advice** (`POST /api/plan`, one Gemini call): the server re-runs the engine on the validated
-   request, builds a prompt with the facts as JSON data and a schema whose `cites` enum is the
-   plan's fact ids, then salvages, sanitizes and fact-checks the answer item by item. Identical
+   request, builds a prompt with the facts as JSON data and a shape-only JSON schema, then
+   salvages, sanitizes and fact-checks the answer item by item: any item citing an id that is not
+   one of the plan's facts is dropped and counted. Identical
    prompts are answered from a cache.
 6. **Ask Clearday** (`POST /api/ask`): one grounded question, one call, answered with cited facts.
 7. **AI at work** panel: the exact system instruction and data sent, plus the call's model, latency,
@@ -89,10 +89,10 @@ costs.
 
 ## Google services
 
-| Service                                               | Use                                                                                                                     |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Gemini** (`gemini-3.5-flash-lite`, `@google/genai`) | personal advice and grounded Q&A, structured JSON output with fact-id enums, minimal thinking, 25 s timeout, no retries |
-| **Google AI Studio**                                  | API key management for Gemini                                                                                           |
+| Service                                               | Use                                                                                                                                                      |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gemini** (`gemini-3.5-flash-lite`, `@google/genai`) | personal advice and grounded Q&A, structured JSON output whose fact citations the server checks item by item, minimal thinking, 25 s timeout, no retries |
+| **Google AI Studio**                                  | API key management for Gemini                                                                                                                            |
 
 ## Run it locally
 
