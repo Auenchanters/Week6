@@ -7,7 +7,7 @@
  * Never does: touch ids or numbers (the schema checks ids, the engine clamps numbers), or escape
  * for HTML; React renders text, so removal is defence in depth, not the only line.
  * Lives in shared because the prompt builder (src/ai/prompt.ts) runs in the browser as well as
- * on the server and must clean brief text identically on both sides.
+ * on the server and must clean household text identically on both sides.
  */
 import { capText } from './cap-text.js';
 

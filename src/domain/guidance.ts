@@ -10,19 +10,18 @@
 import type { Home, Member } from '../shared/schema.js';
 import { NAQI_CATEGORIES, type NaqiCategory } from './aqi.js';
 
-export const GUIDANCE_ACTIONS = [
-  'enjoy-outdoors',
-  'sensitive-take-breaks',
-  'limit-outdoor-exertion',
-  'avoid-outdoor-exertion',
-  'stay-indoors',
-  'n95-outdoors',
-  'keep-windows-shut',
-  'run-purifier',
-  'keep-medicines-handy',
-  'talk-to-doctor',
-] as const;
-export type GuidanceAction = (typeof GUIDANCE_ACTIONS)[number];
+/** A precaution, in the order the rule table lists them. */
+export type GuidanceAction =
+  | 'enjoy-outdoors'
+  | 'sensitive-take-breaks'
+  | 'limit-outdoor-exertion'
+  | 'avoid-outdoor-exertion'
+  | 'stay-indoors'
+  | 'n95-outdoors'
+  | 'keep-windows-shut'
+  | 'run-purifier'
+  | 'keep-medicines-handy'
+  | 'talk-to-doctor';
 
 /** How bad a category is: 0 for good up to 5 for severe. */
 export const severity = (category: NaqiCategory): number => NAQI_CATEGORIES.indexOf(category);
@@ -41,7 +40,7 @@ interface Rule {
 
 /** The rule table, in the order actions are shown. `s` is the category's severity. */
 const RULES: readonly Rule[] = [
-  { action: 'enjoy-outdoors', when: (s) => s <= 1 },
+  { action: 'enjoy-outdoors', when: (s, sensitive) => s <= 1 || (s === 2 && !sensitive) },
   { action: 'sensitive-take-breaks', when: (s, sensitive) => s === 2 && sensitive },
   { action: 'stay-indoors', when: (s) => s === 5 },
   { action: 'avoid-outdoor-exertion', when: (s, sensitive) => s >= 4 || (s === 3 && sensitive) },

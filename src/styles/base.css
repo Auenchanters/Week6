@@ -1,0 +1,348 @@
+/*
+ * Clearday design tokens and page-wide rules ("clearing haze": warm paper, ink, a haze that takes
+ * the day's AQI colour). Text colours meet WCAG AA (4.5:1) on --bg and --surface in both schemes;
+ * --field-border meets the 3:1 non-text minimum; --border is decorative only. Category colours
+ * are CPCB-inspired and darkened; each has an ink colour that passes 4.5:1 on it, and the
+ * category name is always written next to the colour.
+ */
+:root {
+  --bg: #f6f3ee;
+  --surface: #fffdf9;
+  --ink: #1d232b;
+  --muted: #4b5560;
+  --border: #d8d2c6;
+  --field-border: #6b665b;
+  --accent: #0b5d56;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2efec;
+  --warn: #8a3b00;
+  --focus: #1a4fd6;
+  --ai: #5b21b6;
+  --ai-soft: #efe9fb;
+  --radius: 14px;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --surface: #1c2229;
+    --ink: #eef0f2;
+    --muted: #a9b3bd;
+    --border: #333c46;
+    --field-border: #8b95a1;
+    --accent: #5fd0c4;
+    --accent-ink: #0b1f1d;
+    --accent-soft: #1a2f2d;
+    --warn: #ffb86b;
+    --focus: #8ab4ff;
+    --ai: #cdb9ff;
+    --ai-soft: #2a2144;
+  }
+}
+
+.cat-good {
+  --cat: #2e8540;
+  --cat-ink: #ffffff;
+}
+.cat-satisfactory {
+  --cat: #7cb342;
+  --cat-ink: #1d232b;
+}
+.cat-moderate {
+  --cat: #c9a400;
+  --cat-ink: #1d232b;
+}
+.cat-poor {
+  --cat: #e07b00;
+  --cat-ink: #1d232b;
+}
+.cat-very-poor {
+  --cat: #d32f2f;
+  --cat-ink: #ffffff;
+}
+.cat-severe {
+  --cat: #7b1f2f;
+  --cat-ink: #ffffff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 1rem/1.55 var(--font-sans);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+h2 {
+  font-size: 1.4rem;
+}
+h3 {
+  font-size: 1.1rem;
+}
+h4 {
+  font-size: 0.95rem;
+  margin: 0.75rem 0 0.25rem;
+}
+p {
+  margin: 0 0 0.75rem;
+}
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+main:focus {
+  outline: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 10;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.site-header,
+main,
+.site-footer {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+.site-header {
+  padding-top: 1rem;
+}
+.brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0;
+}
+.brand__name {
+  font: 700 1.5rem var(--font-serif);
+  letter-spacing: 0.01em;
+}
+.brand__tagline {
+  color: var(--muted);
+}
+main {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+  min-height: 60vh;
+}
+.site-footer {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding-bottom: 2rem;
+}
+
+.btn {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--field-border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
+.btn--quiet {
+  border-color: var(--border);
+  font-weight: 500;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0.2rem 0.1rem;
+  min-height: 1.5rem;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+}
+.field label {
+  font-weight: 600;
+}
+.field__hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.field__error {
+  color: var(--warn);
+  font-weight: 600;
+  margin: 0;
+}
+
+input[type='text'],
+input[type='number'],
+select {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--field-border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  width: 100%;
+}
+input[aria-invalid='true'] {
+  border-width: 2px;
+  border-color: var(--warn);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.25rem;
+  cursor: pointer;
+}
+.check input {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.tag--ai {
+  background: var(--ai-soft);
+  color: var(--ai);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+.chip {
+  display: inline-block;
+  padding: 0.15rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.chip--button {
+  min-height: 2rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-color: var(--field-border);
+}
+.chip--button[aria-pressed='true'],
+.chip--button[aria-expanded='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.muted {
+  color: var(--muted);
+}
+.warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn,
+  .chip--button {
+    transition: background-color 0.15s ease;
+  }
+}
+
+@media (forced-colors: active) {
+  .btn--primary,
+  .chip--button[aria-pressed='true'] {
+    border: 2px solid ButtonText;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}

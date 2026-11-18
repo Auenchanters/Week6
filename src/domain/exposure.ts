@@ -41,7 +41,7 @@ export function activityAir(activity: Activity): { ratio: number; effort: Effort
 }
 
 /** Where a slice of an hour is spent. */
-export type Place =
+type Place =
   | { readonly kind: 'home' }
   | { readonly kind: 'away' }
   | { readonly kind: 'activity'; readonly activityId: string };

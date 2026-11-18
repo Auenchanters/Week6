@@ -53,7 +53,7 @@ const openMeteoPlaces = z.object({
 });
 
 /** A place a search found. */
-export interface PlaceMatch {
+interface PlaceMatch {
   readonly name: string;
   readonly latitude: number;
   readonly longitude: number;
@@ -65,7 +65,7 @@ export interface PlaceMatch {
  */
 export function fillGaps(values: readonly (number | null)[]): number[] | null {
   const first = values.find((v) => v !== null);
-  if (first === undefined || first === null) return null;
+  if (first === undefined) return null;
   let last = first;
   return values.map((v) => {
     if (v !== null) last = v;

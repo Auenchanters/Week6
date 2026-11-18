@@ -92,7 +92,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
 };
 
 /** An index value with the category it falls in. */
-export interface IndexValue {
+interface IndexValue {
   readonly value: number;
   readonly category: NaqiCategory;
 }

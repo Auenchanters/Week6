@@ -76,10 +76,10 @@ function cleanItems(
 export function parseAdvice(text: string, ids: FactIds): Read<Advice> {
   const raw = jsonObject(text);
   const { shape } = adviceSchemaFor(ids);
-  const summary = shape.summary.safeParse(raw['summary']);
-  const routine = salvage(raw['routine'], shape.routine.element);
-  const indoor = salvage(raw['indoor'], shape.indoor.element);
-  const alternatives = salvage(raw['alternatives'], shape.alternatives.element);
+  const summary = shape.summary.safeParse(raw.summary);
+  const routine = salvage(raw.routine, shape.routine.element);
+  const indoor = salvage(raw.indoor, shape.indoor.element);
+  const alternatives = salvage(raw.alternatives, shape.alternatives.element);
   const lists = {
     routine: cleanItems(routine, LIMITS.ai.notesMax),
     indoor: cleanItems(indoor, LIMITS.ai.hacksMax),
@@ -93,7 +93,7 @@ export function parseAdvice(text: string, ids: FactIds): Read<Advice> {
   };
   const count = value.routine.length + value.indoor.length + value.alternatives.length;
   if (value.summary === '' && count === 0) throw new AppError('INVALID_RESPONSE');
-  const badSummary = summary.success || raw['summary'] === undefined ? 0 : 1;
+  const badSummary = summary.success || raw.summary === undefined ? 0 : 1;
   return {
     value,
     dropped: badSummary + lists.routine.dropped + lists.indoor.dropped + lists.alternatives.dropped,

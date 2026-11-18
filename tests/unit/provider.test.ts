@@ -21,7 +21,7 @@ vi.mock('@google/genai', async (importOriginal) => ({
 
 const prompt: Prompt = {
   system: 'fixed instruction',
-  user: '{"brief":{}}',
+  user: '{"facts":[]}',
   schema: { type: 'object' },
 };
 

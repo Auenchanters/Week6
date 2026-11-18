@@ -16,7 +16,7 @@ export type SwapCategory = 'travel' | 'home' | 'cooking' | 'heating' | 'protecti
 export type Cost = 'free' | 'low' | 'medium' | 'high';
 
 /** A travel change: one trip, from its current mode to a cleaner one. */
-export interface TripChange {
+interface TripChange {
   readonly activity: Activity;
   readonly from: Mode;
   readonly to: Mode;

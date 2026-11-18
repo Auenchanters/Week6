@@ -48,7 +48,7 @@ const hour = z.number().int().min(0).max(23);
 const id = z.string().regex(/^[a-z0-9-]{1,24}$/u);
 const label = (max: number) => z.string().trim().min(1).max(max);
 
-export const memberSchema = z.strictObject({
+const memberSchema = z.strictObject({
   id,
   name: label(P.memberNameMax),
   age: z.enum(AGE_BANDS),
@@ -60,7 +60,7 @@ export const memberSchema = z.strictObject({
     .nullable(),
 });
 
-export const homeSchema = z.strictObject({
+const homeSchema = z.strictObject({
   areaM2: z.number().int().min(P.areaMinM2).max(P.areaMaxM2),
   tightness: z.enum(TIGHTNESS),
   cookingFuel: z.enum(COOKING_FUELS),
@@ -76,7 +76,7 @@ export const homeSchema = z.strictObject({
   n95Outdoors: z.boolean(),
 });
 
-export const activitySchema = z
+const activitySchema = z
   .strictObject({
     id,
     kind: z.enum(ACTIVITY_KINDS),
@@ -94,7 +94,7 @@ export const activitySchema = z
     path: ['window'],
   });
 
-export const placeSchema = z.strictObject({
+const placeSchema = z.strictObject({
   name: label(P.placeNameMax),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
@@ -122,7 +122,7 @@ export const profileSchema = z
 const concentration = z.number().min(0).max(LIMITS.forecast.concentrationMax);
 
 /** One hour of outdoor air, µg/m³ except CO in mg/m³ (the unit Indian AQI breakpoints use). */
-export const airHourSchema = z.strictObject({
+const airHourSchema = z.strictObject({
   /** Local wall-clock time, `YYYY-MM-DDTHH:00`, as Open-Meteo returns it with `timezone=auto`. */
   time: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:00$/u),
   pm25: concentration,
@@ -170,8 +170,7 @@ const citedSchema = (ids: FactIds) =>
     cites: z.array(z.enum(ids)).min(1).max(MAX_CITES),
   });
 
-/** The AI's advice for one plan; every item must cite at least one fact id of that plan. */
-export const adviceSchemaFor = (ids: FactIds) =>
+const adviceShape = (ids: FactIds) =>
   z.strictObject({
     summary: z.string().trim().min(1).max(A.summaryMax),
     routine: z.array(citedSchema(ids)).max(A.notesMax),
@@ -179,12 +178,20 @@ export const adviceSchemaFor = (ids: FactIds) =>
     alternatives: z.array(citedSchema(ids)).max(A.alternativesMax),
   });
 
-/** The AI's answer to one follow-up question about a plan. */
-export const askAnswerSchemaFor = (ids: FactIds) =>
+const askAnswerShape = (ids: FactIds) =>
   z.strictObject({
     answer: z.string().trim().min(1).max(A.answerMax),
     cites: z.array(z.enum(ids)).max(MAX_CITES),
   });
+
+export type AdviceSchema = ReturnType<typeof adviceShape>;
+export type AskAnswerSchema = ReturnType<typeof askAnswerShape>;
+
+/** The AI's advice for one plan; every item must cite at least one fact id of that plan. */
+export const adviceSchemaFor = (ids: FactIds): AdviceSchema => adviceShape(ids);
+
+/** The AI's answer to one follow-up question about a plan. */
+export const askAnswerSchemaFor = (ids: FactIds): AskAnswerSchema => askAnswerShape(ids);
 
 /** A cited item as the browser stores it (ids already checked against the plan). */
 export interface CitedItem {
@@ -228,5 +235,3 @@ export const askRequestSchema = z.strictObject({
   dayIndex: z.union([z.literal(0), z.literal(1)]),
   question: z.string().trim().min(2).max(A.questionMax),
 });
-export type AdviceRequest = z.infer<typeof adviceRequestSchema>;
-export type AskRequest = z.infer<typeof askRequestSchema>;

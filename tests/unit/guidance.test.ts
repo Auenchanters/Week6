@@ -35,7 +35,13 @@ const CASES: readonly Case[] = [
     category: 'satisfactory',
     expected: ['enjoy-outdoors'],
   },
-  { who: 'adult', member: adult, home: noPurifier, category: 'moderate', expected: [] },
+  {
+    who: 'adult',
+    member: adult,
+    home: noPurifier,
+    category: 'moderate',
+    expected: ['enjoy-outdoors'],
+  },
   {
     who: 'adult',
     member: adult,

@@ -1,5 +1,5 @@
 /**
- * Text sanitizing for brief text going into the prompt and model text coming out.
+ * Text sanitizing for household text going into the prompt and model text coming out.
  * Does: pins the tag, control-character, whitespace and code-point-cap rules.
  */
 import { describe, expect, it } from 'vitest';

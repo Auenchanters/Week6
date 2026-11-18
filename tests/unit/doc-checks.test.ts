@@ -65,7 +65,7 @@ describe('docPaths: links', () => {
   });
 
   it.each([
-    ['an https URL', '[site](https://gatherwise.vercel.app)'],
+    ['an https URL', '[site](https://clearday.vercel.app)'],
     ['a mailto link', '[mail](mailto:someone@example.com)'],
     ['a protocol-relative URL', '[cdn](//cdn.example.com/x.js)'],
     ['a site-root link', '[route](/api/health)'],
@@ -133,12 +133,12 @@ describe('missingHeadings', () => {
 
 describe('hasLiveUrl', () => {
   it.each([
-    ['**Live demo:** https://gatherwise.vercel.app', true],
-    ['[Live demo](https://gatherwise-abc123.vercel.app/)', true],
+    ['**Live demo:** https://clearday.vercel.app', true],
+    ['[Live demo](https://clearday-abc123.vercel.app/)', true],
     ['**Live demo:** _link added after the first deploy_', false],
-    ['http://gatherwise.vercel.app', false],
-    ['https://gatherwise.vercel.app.example.com', false],
-    ['https://example.com/gatherwise.vercel.app', false],
+    ['http://clearday.vercel.app', false],
+    ['https://clearday.vercel.app.example.com', false],
+    ['https://example.com/clearday.vercel.app', false],
   ])('%s → %s', (readme, expected) => {
     expect(hasLiveUrl(readme)).toBe(expected);
   });
