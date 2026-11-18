@@ -565,8 +565,21 @@ describe('POST /api/plan: the model call', () => {
     await handlerWith({
       generate: failing(new ApiError({ message: 'upstream secret', status: 404 })),
     })(plan());
-    expect(lastRequestLog(error)).toMatchObject({ code: 'AI_UNAVAILABLE', providerStatus: 404 });
+    expect(lastRequestLog(error)).toMatchObject({
+      code: 'AI_UNAVAILABLE',
+      providerStatus: 404,
+      providerReason: 'other',
+    });
     expect(JSON.stringify(lastRequestLog(error))).not.toContain('upstream secret');
+  });
+
+  it.each([
+    ['API key not valid. Please pass a valid API key.', 'api-key'],
+    ['The specified schema produces a constraint that has too many states', 'schema'],
+  ])('labels a provider refusal "%s" as %s', async (message, reason) => {
+    await handlerWith({ generate: failing(new ApiError({ message, status: 400 })) })(plan());
+    expect(lastRequestLog(error)).toMatchObject({ providerStatus: 400, providerReason: reason });
+    expect(JSON.stringify(lastRequestLog(error))).not.toContain(message);
   });
 
   it('502 AI_UNAVAILABLE, not a 500, for an error that cannot be inspected', async () => {

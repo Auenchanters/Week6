@@ -26,6 +26,8 @@ export interface RequestFacts {
   dropped?: number;
   /** The model provider's HTTP status when a call failed (a number only, never its message). */
   providerStatus?: number;
+  /** Why the provider refused, as a fixed label derived from its error; never the text itself. */
+  providerReason?: 'api-key' | 'schema' | 'other';
 }
 
 /** Everything a request log line may hold. */

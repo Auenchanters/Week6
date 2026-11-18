@@ -102,10 +102,22 @@ function modelFailure(error: unknown): ErrorCode {
   return 'AI_UNAVAILABLE';
 }
 
-/** The provider's HTTP status for a failed call, for the log only; never its message. */
-function providerStatus(error: unknown): number | undefined {
+/**
+ * The provider's HTTP status for a failed call and a fixed label for why it refused, read from its
+ * error text so the log can say "bad key" or "schema rejected" without ever holding the text.
+ * Undefined for anything that is not the SDK's `ApiError`, or that cannot be inspected.
+ */
+function providerRefusal(
+  error: unknown,
+): { status: number; reason: 'api-key' | 'schema' | 'other' } | undefined {
   try {
-    return error instanceof ApiError ? error.status : undefined;
+    if (!(error instanceof ApiError)) return undefined;
+    const reason = /api.?key/iu.test(error.message)
+      ? 'api-key'
+      : /schema|states/iu.test(error.message)
+        ? 'schema'
+        : 'other';
+    return { status: error.status, reason };
   } catch {
     return undefined;
   }
@@ -160,8 +172,11 @@ export function createHandler(
       generation = await withCapacity(() => generate(prompt, request.signal));
     } catch (error) {
       if (error instanceof AppError) throw error;
-      const status = providerStatus(error);
-      if (status !== undefined) trace.providerStatus = status;
+      const refusal = providerRefusal(error);
+      if (refusal) {
+        trace.providerStatus = refusal.status;
+        trace.providerReason = refusal.reason;
+      }
       throw new AppError(modelFailure(error));
     }
     const latencyMs = Math.round(performance.now() - started);
