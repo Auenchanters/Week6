@@ -9,6 +9,7 @@ import { LANGUAGE_NAMES } from '../../ai/prompt.js';
 import type { DayPlan } from '../../domain/plan.js';
 import { LANGUAGES, type Advice, type CitedItem, type Language } from '../../shared/schema.js';
 import { SelectField } from '../../ui/fields.js';
+import { AI_TAG } from '../../ui/labels.js';
 import { Cites } from './cites.js';
 
 const SECTIONS = [
@@ -76,7 +77,7 @@ export function AdvicePanel(props: {
       </div>
       {advice ? (
         <div className="advice" lang={language} dir="auto">
-          <p className="tag tag--ai">AI · personalized</p>
+          <p className="tag tag--ai">{AI_TAG}</p>
           <p className="advice__summary">{advice.summary}</p>
           {SECTIONS.map(({ key, title }) => (
             <Section key={key} title={title} items={advice[key]} plan={plan} />

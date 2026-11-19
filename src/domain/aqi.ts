@@ -49,7 +49,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [90, 200],
     [120, 300],
     [250, 400],
-    [380, 500],
+    [380, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
   pm10: [
     [50, 50],
@@ -57,7 +57,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [250, 200],
     [350, 300],
     [430, 400],
-    [510, 500],
+    [510, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
   no2: [
     [40, 50],
@@ -65,7 +65,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [180, 200],
     [280, 300],
     [400, 400],
-    [520, 500],
+    [520, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
   o3: [
     [50, 50],
@@ -73,7 +73,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [168, 200],
     [208, 300],
     [748, 400],
-    [1288, 500],
+    [1288, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
   co: [
     [1, 50],
@@ -81,7 +81,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [10, 200],
     [17, 300],
     [34, 400],
-    [51, 500],
+    [51, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
   so2: [
     [40, 50],
@@ -89,7 +89,7 @@ const NAQI_BREAKPOINTS: Readonly<Record<Pollutant, readonly (readonly [number, n
     [380, 200],
     [800, 300],
     [1600, 400],
-    [2400, 500],
+    [2400, 500], // "Severe" is open-ended in CPCB; this cap is ours
   ],
 };
 

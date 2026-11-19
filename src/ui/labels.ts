@@ -6,6 +6,7 @@
  */
 import type { NaqiCategory, Pollutant } from '../domain/aqi.js';
 import type { GuidanceAction } from '../domain/guidance.js';
+import type { DayIndex } from '../domain/plan.js';
 import type { Cost, Swap, SwapCategory } from '../domain/swaps.js';
 import type {
   ActivityKind,
@@ -172,3 +173,9 @@ export function swapTitle(swap: Swap, members: readonly Member[]): string {
   }
   return SWAP_TEXT[swap.id] ?? swap.label;
 }
+
+/** The plan day's name, by its index into the 48-hour forecast. */
+export const DAY_LABELS: Readonly<Record<DayIndex, string>> = { 0: 'Today', 1: 'Tomorrow' };
+
+/** The tag on every piece of AI-written text, so it is never mistaken for an engine figure. */
+export const AI_TAG = 'AI · personalized';

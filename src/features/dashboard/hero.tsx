@@ -10,7 +10,13 @@ import type { ReactElement } from 'react';
 import type { DayPlan } from '../../domain/plan.js';
 import type { Language, Member } from '../../shared/schema.js';
 import { cigarettes, micrograms } from '../../ui/format.js';
-import { CATEGORY_LABELS, POLLUTANT_LABELS, swapTitle } from '../../ui/labels.js';
+import {
+  AI_TAG,
+  CATEGORY_LABELS,
+  DAY_LABELS,
+  POLLUTANT_LABELS,
+  swapTitle,
+} from '../../ui/labels.js';
 
 /** The hero section; `summary` is the AI's summary, when there is one. */
 export function Hero(props: {
@@ -22,7 +28,7 @@ export function Hero(props: {
   const { plan, members, language, summary } = props;
   const worst = plan.people.reduce((a, b) => (b.before.cigarettes > a.before.cigarettes ? b : a));
   const top = plan.swaps[0];
-  const day = plan.dayIndex === 0 ? 'Today' : 'Tomorrow';
+  const day = DAY_LABELS[plan.dayIndex];
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero__aqi">
@@ -40,7 +46,7 @@ export function Hero(props: {
         </h2>
         {summary ? (
           <p lang={language} dir="auto">
-            <span className="tag tag--ai">AI · personalized</span> {summary}
+            <span className="tag tag--ai">{AI_TAG}</span> {summary}
           </p>
         ) : top ? (
           <p>

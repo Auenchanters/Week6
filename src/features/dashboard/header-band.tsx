@@ -6,11 +6,9 @@
 import type { ReactElement } from 'react';
 import type { DayIndex, DayPlan } from '../../domain/plan.js';
 import { dayLabel } from '../../ui/format.js';
+import { DAY_LABELS } from '../../ui/labels.js';
 
-const DAYS: readonly { readonly index: DayIndex; readonly label: string }[] = [
-  { index: 0, label: 'Today' },
-  { index: 1, label: 'Tomorrow' },
-];
+const DAYS: readonly DayIndex[] = [0, 1];
 
 /** The dashboard's header band. */
 export function HeaderBand(props: {
@@ -33,7 +31,7 @@ export function HeaderBand(props: {
       </div>
       <div className="band__controls">
         <div className="segmented" role="group" aria-label="Day to plan">
-          {DAYS.map(({ index, label }) => (
+          {DAYS.map((index) => (
             <button
               key={index}
               type="button"
@@ -42,7 +40,7 @@ export function HeaderBand(props: {
                 onDay(index);
               }}
             >
-              {label}
+              {DAY_LABELS[index]}
             </button>
           ))}
         </div>

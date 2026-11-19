@@ -96,10 +96,13 @@ function swapText(swap: Swap, profile: Profile): string {
   return `${what}: ${delta(swap.doseSavedUg, 'µg', whole)} PM2.5 breathed by the household a day; ${delta(swap.co2SavedKg, 'kg', oneDecimal)} CO2 a week${street}. Cost: ${swap.cost}.`;
 }
 
-/** The facts for a plan, in the order the AI should read them. */
-function factsFor(plan: Omit<DayPlan, 'facts'>, profile: Profile): Fact[] {
+/** A plan before its facts are written. */
+type PlanBody = Omit<DayPlan, 'facts'>;
+
+/** The day's air: its index, its cleanest and worst hours, and the indoor average. */
+function airFacts(plan: PlanBody): Fact[] {
   const { day, airing, before, worst } = plan;
-  const facts: Fact[] = [
+  return [
     {
       id: 'air.day',
       text: `${plan.date} India AQI ${whole(day.value)} (${day.category}; an index, not µg/m³), driven by ${day.dominant}; US AQI for PM2.5 ${whole(plan.usAqi)}.`,
@@ -117,9 +120,13 @@ function factsFor(plan: Omit<DayPlan, 'facts'>, profile: Profile): Fact[] {
       text: `Modelled indoor PM2.5 averages ${whole(before.indoor.mean)} µg/m³; ${whole(before.indoor.outdoorShare * 100)}% of it comes from outdoors.`,
     },
   ];
-  for (const { member, before: now, after: planned, actions } of plan.people) {
+}
+
+/** Each person's dose today, before and after the routine, and their precautions. */
+function personFacts(plan: PlanBody): Fact[] {
+  return plan.people.flatMap(({ member, before: now, after: planned, actions }) => {
     const conditions = member.conditions.length > 0 ? `, ${member.conditions.join(', ')}` : '';
-    facts.push(
+    return [
       {
         id: `member.${member.id}`,
         text: `${member.name} (${member.age}${conditions}): breathes about ${whole(now.doseUg)} µg of PM2.5 today, like smoking ${oneDecimal(now.cigarettes)} cigarettes; ${whole(planned.doseUg)} µg with the suggested routine.`,
@@ -128,27 +135,50 @@ function factsFor(plan: Omit<DayPlan, 'facts'>, profile: Profile): Fact[] {
         id: `guidance.${member.id}`,
         text: `Precautions for ${member.name}: ${actions.join(', ')}.`,
       },
-    );
-  }
-  for (const move of plan.moves) {
-    facts.push({
-      id: `move.${move.activity.id}`,
-      text: `Moving ${activityLabel(move.activity, profile.members)} from ${clock(move.fromHour)} to ${clock(move.toHour)} saves the household about ${whole(move.savedUg)} µg of PM2.5 today.`,
-    });
-  }
-  if (airing.savedUg > 0)
-    facts.push({
-      id: 'airing',
-      text: `Airing the home at ${clock(airing.hours[0])}–${clock(airing.hours[1] + 1)} instead of the usual hours saves about ${whole(airing.savedUg)} µg today.`,
-    });
-  for (const swap of plan.swaps)
-    facts.push({ id: `swap.${swap.id}`, text: swapText(swap, profile) });
+    ];
+  });
+}
+
+/** What the household can do: moved outings, better airing hours, and each measured change. */
+function actionFacts(plan: PlanBody, profile: Profile): Fact[] {
+  const { airing } = plan;
+  const moves = plan.moves.map((move) => ({
+    id: `move.${move.activity.id}`,
+    text: `Moving ${activityLabel(move.activity, profile.members)} from ${clock(move.fromHour)} to ${clock(move.toHour)} saves the household about ${whole(move.savedUg)} µg of PM2.5 today.`,
+  }));
+  const airingFact =
+    airing.savedUg > 0
+      ? [
+          {
+            id: 'airing',
+            text: `Airing the home at ${clock(airing.hours[0])}–${clock(airing.hours[1] + 1)} instead of the usual hours saves about ${whole(airing.savedUg)} µg today.`,
+          },
+        ]
+      : [];
+  const swaps = plan.swaps.map((swap) => ({
+    id: `swap.${swap.id}`,
+    text: swapText(swap, profile),
+  }));
+  return [...moves, ...airingFact, ...swaps];
+}
+
+/** The household's weekly CO2, split by source. */
+function footprintFact(plan: PlanBody): Fact {
   const { co2Kg, totalCo2Kg } = plan.footprint;
-  facts.push({
+  return {
     id: 'footprint',
     text: `Household CO2 about ${oneDecimal(totalCo2Kg)} kg a week: travel ${oneDecimal(co2Kg.travel)}, cooking ${oneDecimal(co2Kg.cooking)}, heating ${oneDecimal(co2Kg.heating)}, purifier ${oneDecimal(co2Kg.purifier)}.`,
-  });
-  return facts;
+  };
+}
+
+/** The facts for a plan, in the order the AI should read them. */
+function factsFor(plan: PlanBody, profile: Profile): Fact[] {
+  return [
+    ...airFacts(plan),
+    ...personFacts(plan),
+    ...actionFacts(plan, profile),
+    footprintFact(plan),
+  ];
 }
 
 /** The hour with the most outdoor PM2.5 (the earliest on a tie); hour 0 at 0 for no hours. */

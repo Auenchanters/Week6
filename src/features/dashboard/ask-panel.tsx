@@ -10,7 +10,7 @@ import type { DayPlan } from '../../domain/plan.js';
 import { LIMITS } from '../../shared/limits.js';
 import type { Profile } from '../../shared/schema.js';
 import { clock } from '../../ui/format.js';
-import { KIND_LABELS } from '../../ui/labels.js';
+import { AI_TAG, KIND_LABELS } from '../../ui/labels.js';
 import { Cites } from './cites.js';
 import type { Exchange } from './use-ai.js';
 
@@ -87,7 +87,7 @@ export function AskPanel(props: {
               <strong>You asked:</strong> {x.question}
             </p>
             <p lang={profile.language} dir="auto">
-              <span className="tag tag--ai">AI · personalized</span> {x.answer.answer}
+              <span className="tag tag--ai">{AI_TAG}</span> {x.answer.answer}
             </p>
             <Cites ids={x.answer.cites} facts={plan.facts} />
           </div>
