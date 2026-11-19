@@ -222,16 +222,22 @@ async function admit(deps: Deps, request: Request, path: Route): Promise<void> {
   await deps.limits.request(clientId(request), deps.now().getTime());
 }
 
+/** The route `path` names, once the request is still wanted and uses that route's method. */
+function resolve(request: Request, path: string): Route {
+  request.signal.throwIfAborted();
+  if (!isRoute(path)) throw new AppError('NOT_FOUND');
+  const method = ROUTES[path];
+  if (request.method !== method) throw new AppError('METHOD_NOT_ALLOWED', { allow: method });
+  return path;
+}
+
 /** Routes `call` and turns anything thrown into the catalogued error response. */
 async function respond(deps: Deps, call: InFlight, path: string): Promise<Outcome> {
   const { request } = call;
   try {
-    request.signal.throwIfAborted();
-    if (!isRoute(path)) throw new AppError('NOT_FOUND');
-    const method = ROUTES[path];
-    if (request.method !== method) throw new AppError('METHOD_NOT_ALLOWED', { allow: method });
-    if (path !== '/api/health') await admit(deps, request, path);
-    return { response: await HANDLERS[path](deps, call) };
+    const route = resolve(request, path);
+    if (route !== '/api/health') await admit(deps, request, route);
+    return { response: await HANDLERS[route](deps, call) };
   } catch (error) {
     const failure = toAppError(error, request);
     if (failure.code === 'INTERNAL_ERROR') call.trace.kind = 'internal';

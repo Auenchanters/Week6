@@ -55,6 +55,8 @@ const RETRY_WINDOW_MS = 3000;
 export function createGeminiGenerator(apiKey: string, model: string): Generate {
   const client = new GoogleGenAI({
     apiKey,
+    // The SDK's own retries are off (one attempt), so `withOverloadRetry` below is the only retry
+    // and the call's worst case stays inside the function's 30 s limit.
     httpOptions: { timeout: TIMEOUT_MS, retryOptions: { attempts: 1 } },
   });
   const call = (prompt: Prompt, signal: AbortSignal) =>
