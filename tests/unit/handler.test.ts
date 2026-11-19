@@ -17,7 +17,8 @@ import {
 } from 'vitest';
 import { z } from 'zod';
 import type { AirClient } from '../../server/air.js';
-import { createHandler, handlerFromEnv, type HandlerOptions } from '../../server/handler.js';
+import { handlerFromEnv } from '../../server/env.js';
+import { createHandler, type HandlerOptions } from '../../server/handler.js';
 import type { Generate, Generation } from '../../server/provider.js';
 import { createMemoryLimits, type Limits } from '../../server/rate-limit.js';
 import { sampleForecast } from '../../server/sample-forecast.js';
@@ -517,7 +518,8 @@ describe('POST /api/plan: the model call', () => {
     expect(generate).toHaveBeenCalledTimes(2);
   });
 
-  it('forgets cached answers once it holds 200, and not before', async () => {
+  // 201 full engine runs: about 2 s alone, more on a loaded machine, so it gets its own timeout.
+  it('forgets cached answers once it holds 200, and not before', { timeout: 30_000 }, async () => {
     const generate = vi.fn<Generate>(() => Promise.resolve(generation(JSON.stringify(ANSWER))));
     const handler = handlerWith({ generate, limits: unlimited });
     for (let i = 0; i < 201; i += 1)

@@ -31,6 +31,9 @@ export interface Generation {
 /** One model call; injectable so every handler test runs offline. */
 export type Generate = (prompt: Prompt, signal: AbortSignal) => Promise<Generation>;
 
+/** The model used when `GEMINI_MODEL` is not set: the cheapest that follows the answer schema. */
+export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+
 const TIMEOUT_MS = 25_000;
 /**
  * Room for the largest answer the schema allows (every list full, every string at its cap) with

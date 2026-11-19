@@ -8,16 +8,19 @@
 import { createHash } from 'node:crypto';
 import type { Prompt } from '../src/ai/prompt.js';
 
+/** What identifies a prompt: its two texts. The response schema follows from them. */
+type PromptText = Pick<Prompt, 'system' | 'user'>;
+
 /** The answer cache's operations. */
 export interface AnswerCache {
   /** The body stored for `prompt`, or undefined when it was never answered (or was cleared). */
-  readonly get: (prompt: Prompt) => unknown;
+  readonly get: (prompt: PromptText) => unknown;
   /** Stores `body` as the answer to `prompt`, clearing the cache first when it is full. */
-  readonly set: (prompt: Prompt, body: unknown) => void;
+  readonly set: (prompt: PromptText, body: unknown) => void;
 }
 
 /** A SHA-256 of a prompt; the NUL separator keeps `("ab", "c")` and `("a", "bc")` apart. */
-const promptKey = (prompt: Prompt): string =>
+const promptKey = (prompt: PromptText): string =>
   createHash('sha256').update(prompt.system).update('\u0000').update(prompt.user).digest('hex');
 
 /** An empty cache that holds at most `max` answers. */

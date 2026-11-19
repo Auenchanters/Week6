@@ -25,19 +25,12 @@ import { createAnswerCache, type AnswerCache } from './answer-cache.js';
 import { parseAdvice, parseAskAnswer, type Read } from './answer.js';
 import { createInferenceGate } from './capacity.js';
 import { AppError, errorResponse, type ErrorCode } from './errors.js';
-import { logEvent, logRequest, type RequestFacts, type Route } from './log.js';
+import { logRequest, type RequestFacts, type Route } from './log.js';
 import { guardedGeneration } from './model-call.js';
-import { createGeminiGenerator, type Generate, type Generation } from './provider.js';
-import {
-  clientId,
-  createMemoryLimits,
-  createSharedLimits,
-  DEFAULT_DAILY_LIMIT,
-  type Limits,
-} from './rate-limit.js';
+import { DEFAULT_MODEL, type Generate, type Generation } from './provider.js';
+import { clientId, createMemoryLimits, type Limits } from './rate-limit.js';
 import { readJsonBody, readQuery, validateTransport } from './request.js';
 
-const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 /** Each route and the one method it accepts. */
 const ROUTES = {
   '/api/plan': 'POST',
@@ -275,55 +268,4 @@ export function createHandler(
     });
     return response;
   };
-}
-
-/** The environment variables a handler is configured from, such as `process.env`. */
-export type Env = Readonly<Record<string, string | undefined>>;
-
-/** A setting read from `env`: trimmed, and undefined when unset or blank (`NAME=`). */
-const settingsOf =
-  (env: Env) =>
-  (name: string): string | undefined => {
-    const value = env[name]?.trim();
-    return value === '' ? undefined : value;
-  };
-
-/** The daily model-call budget: a positive whole number, or the default. */
-function dailyLimitOf(raw: string | undefined): number {
-  const daily = Number(raw);
-  return Number.isSafeInteger(daily) && daily > 0 ? daily : DEFAULT_DAILY_LIMIT;
-}
-
-/** Shared limits when a store is configured; otherwise this instance's memory, logged once. */
-function limitsFrom(setting: (name: string) => string | undefined, dailyLimit: number): Limits {
-  const memory = createMemoryLimits(dailyLimit);
-  const url = setting('KV_REST_API_URL') ?? setting('UPSTASH_REDIS_REST_URL');
-  const token = setting('KV_REST_API_TOKEN') ?? setting('UPSTASH_REDIS_REST_TOKEN');
-  if (url === undefined || token === undefined) {
-    logEvent({ event: 'limiter_fallback', reason: 'not_configured' });
-    return memory;
-  }
-  return createSharedLimits({ url, token, dailyLimit, fallback: memory });
-}
-
-/**
- * A handler configured from `env`, built once per warm instance by each function entry point:
- * `GEMINI_API_KEY` (no key, no model calls), `GEMINI_MODEL`, `APP_ORIGIN`, `AI_DAILY_LIMIT` (a
- * whole number of model calls a UTC day; 300 when unset or not a positive whole number) and the
- * shared store for the limits: `KV_REST_API_URL` and `KV_REST_API_TOKEN` as the Vercel Marketplace
- * names them, or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Without a store the
- * limits count in this instance's memory, and that is logged once. A value that is unset or blank
- * (`NAME=`) means "not set".
- */
-export function handlerFromEnv(env: Env): (request: Request) => Promise<Response> {
-  const setting = settingsOf(env);
-  const key = setting('GEMINI_API_KEY');
-  const model = setting('GEMINI_MODEL') ?? DEFAULT_MODEL;
-  const origin = setting('APP_ORIGIN');
-  return createHandler({
-    model,
-    limits: limitsFrom(setting, dailyLimitOf(setting('AI_DAILY_LIMIT'))),
-    ...(key ? { generate: createGeminiGenerator(key, model) } : {}),
-    ...(origin ? { origin } : {}),
-  });
 }

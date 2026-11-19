@@ -11,8 +11,10 @@ import assert from 'node:assert/strict';
 // smoke runs the same whatever origin the project is configured for.
 delete process.env.GEMINI_API_KEY;
 delete process.env.APP_ORIGIN;
-const { default: health } = await import('../artifacts/runtime/api/health.js');
-const { default: plan } = await import('../artifacts/runtime/api/plan.js');
+// One function serves every route, as Vercel deploys it.
+const { default: api } = await import('../artifacts/runtime/api/[route].js');
+const health = api;
+const plan = api;
 const base = 'https://clearday.example';
 
 const ready = await health.fetch(new Request(`${base}/api/health`));
