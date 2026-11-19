@@ -685,6 +685,13 @@ describe('POST /api/ask: the model call', () => {
     expect(body.meta.model).toBe('test-model');
   });
 
+  it('reports the default model id when none is configured', async () => {
+    const generate = answering(JSON.stringify(ANSWER));
+    const response = await createHandler({ now: () => NOW, air: fakeAir(), generate })(ask());
+    const { meta } = z.looseObject({ meta: aiMetaSchema }).parse(await response.json());
+    expect(meta.model).toBe('gemini-3.5-flash-lite');
+  });
+
   it('sends the generator exactly the ask prompt for the plan and the question', async () => {
     const generate = answering(JSON.stringify(ANSWER));
     await handlerWith({ generate })(ask());

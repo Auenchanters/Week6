@@ -103,13 +103,8 @@ export function checkPage(status: number, finalUrl: string, html: string): strin
   return failures;
 }
 
-/** The plan call: 200, `no-store`, security headers, a parsing body and a latency under the cap. */
-export function checkPlan(
-  status: number,
-  headers: Headers,
-  body: unknown,
-  latencyMs: number,
-): SmokeResult {
+/** The plan call's headers and speed: security headers, `no-store`, and a latency under the cap. */
+function planTransport(headers: Headers, latencyMs: number): string[] {
   const failures = checkHeaders(headers).map((failure) => `POST /api/plan: ${failure}`);
   if (headers.get('cache-control') !== 'no-store') {
     failures.push('POST /api/plan is not Cache-Control: no-store');
@@ -119,6 +114,17 @@ export function checkPlan(
       `POST /api/plan took ${(latencyMs / 1000).toFixed(1)} s, the limit is ${MAX_LATENCY_MS / 1000} s`,
     );
   }
+  return failures;
+}
+
+/** The plan call: 200, `no-store`, security headers, a parsing body and a latency under the cap. */
+export function checkPlan(
+  status: number,
+  headers: Headers,
+  body: unknown,
+  latencyMs: number,
+): SmokeResult {
+  const failures = planTransport(headers, latencyMs);
   if (status !== 200) {
     const code = errorResponse.safeParse(body).data?.error.code;
     failures.push(
