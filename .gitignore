@@ -11,3 +11,7 @@ playwright-report/
 .superpowers/
 artifacts/
 .claude/
+
+# Mutation testing output
+.stryker-tmp/
+reports/

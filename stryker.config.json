@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing is scoped to the pure engine (src/domain): every number on screen comes from it, so a surviving mutant there is a wrong number nobody would notice. Run with `npm run test:mutation`; the last measured score is recorded in docs/TESTING.md.",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.mutation.config.ts"
+  },
+  "checkers": [],
+  "mutate": ["src/domain/**/*.ts"],
+  "coverageAnalysis": "perTest",
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 75
+  },
+  "tempDirName": ".stryker-tmp",
+  "concurrency": 4
+}

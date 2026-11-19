@@ -141,6 +141,79 @@ describe('candidates', () => {
   });
 });
 
+describe('the home rules', () => {
+  // A home with every habit the catalog can change, so every rule applies once.
+  const worst = cleanProfile([activityWith({ distanceKm: 0 })], {
+    purifier: 'small',
+    cookingFuel: 'biomass',
+    heater: 'coal-wood',
+    heaterHours: 5,
+    incense: true,
+    smokingIndoors: true,
+    burnsWaste: true,
+  });
+
+  it.each([
+    [
+      'home.exhaust-fan',
+      'home',
+      'low',
+      'Running a kitchen exhaust fan while cooking',
+      { exhaustFan: true },
+    ],
+    ['cooking.lpg', 'cooking', 'medium', 'Cooking on LPG instead', { cookingFuel: 'lpg' }],
+    [
+      'cooking.induction',
+      'cooking',
+      'medium',
+      'Cooking on induction instead',
+      { cookingFuel: 'induction' },
+    ],
+    [
+      'heating.electric',
+      'heating',
+      'medium',
+      'Heating with an electric heater instead of burning fuel',
+      { heater: 'electric' },
+    ],
+    [
+      'heating.fewer-hours',
+      'heating',
+      'low',
+      'Running the heater 2 hours less (draught-proofing, warmer layers)',
+      { heaterHours: 3 },
+    ],
+    [
+      'protection.n95',
+      'protection',
+      'low',
+      'Wearing a fitted N95 mask outdoors',
+      { n95Outdoors: true },
+    ],
+    ['home.no-incense', 'home', 'free', 'Not burning incense indoors', { incense: false }],
+    ['home.smoke-free', 'home', 'free', 'Keeping the home smoke-free', { smokingIndoors: false }],
+    [
+      'community.compost',
+      'community',
+      'free',
+      'Composting garden and kitchen waste instead of burning it',
+      { burnsWaste: false },
+    ],
+  ] as const)(
+    '%s is a %s change at %s cost that applies exactly its patch',
+    (id, category, cost, label, patch) => {
+      const rule = candidates(worst).find((c) => c.id === id);
+      expect(rule).toMatchObject({ category, cost, label });
+      expect(rule?.apply(worst).home).toEqual({ ...worst.home, ...patch });
+    },
+  );
+
+  it('suggests fewer heater hours only when a heater is used', () => {
+    const noHeater = cleanProfile([], { heater: 'none', heaterHours: 5 });
+    expect(candidates(noHeater).map((c) => c.id)).not.toContain('heating.fewer-hours');
+  });
+});
+
 describe('measureSwaps', () => {
   const swaps = measureSwaps(SAMPLE_PROFILE, sampleOutdoor);
 
