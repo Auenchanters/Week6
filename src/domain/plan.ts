@@ -37,6 +37,10 @@ export interface Person {
   readonly actions: readonly GuidanceAction[];
 }
 
+/**
+ * Everything the screen and the AI need for one day: the air, each person's exposure, the
+ * re-planned routine, the measured changes and the numbered facts the AI may cite.
+ */
 export interface DayPlan {
   readonly dayIndex: DayIndex;
   /** The plan day's date, `YYYY-MM-DD`, in the place's own time zone. */

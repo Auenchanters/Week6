@@ -33,6 +33,7 @@ export interface FieldError {
   readonly message: string;
 }
 
+/** A typical city flat, the starting point for a new household's home. */
 export const DEFAULT_HOME: Home = {
   areaM2: 60,
   tightness: 'average',

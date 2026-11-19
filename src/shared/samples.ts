@@ -6,6 +6,10 @@
  */
 import type { Profile } from './schema.js';
 
+/**
+ * A Delhi family of four with a pregnant parent, a child with asthma and a grandparent with a
+ * heart-lung condition: the sample that shows every kind of guidance.
+ */
 export const SAMPLE_PROFILE: Profile = {
   place: { name: 'New Delhi, India', latitude: 28.61, longitude: 77.21 },
   language: 'en',

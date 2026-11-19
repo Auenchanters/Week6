@@ -7,6 +7,7 @@
  */
 import { profileSchema, type Profile } from '../../shared/schema.js';
 
+/** The localStorage key; the version suffix changes when the stored shape does. */
 export const STORAGE_KEY = 'clearday.v1';
 
 /** The two `Storage` methods used here, so tests can pass a fake. */

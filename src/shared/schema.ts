@@ -16,8 +16,11 @@ export const AGE_BANDS = ['under5', 'child', 'teen', 'adult', 'senior'] as const
 export const CONDITIONS = ['asthma', 'heart-lung', 'pregnant'] as const;
 /** How air-tight the home is; sets the infiltration air-change rate. */
 export const TIGHTNESS = ['leaky', 'average', 'tight'] as const;
+/** Cooking fuels, cleanest first. */
 export const COOKING_FUELS = ['induction', 'lpg', 'kerosene', 'biomass'] as const;
+/** Room heaters, from none to solid fuel. */
 export const HEATERS = ['none', 'electric', 'kerosene', 'coal-wood'] as const;
+/** Air purifier sizes; each has a clean-air delivery rate in the engine. */
 export const PURIFIERS = ['none', 'small', 'medium', 'large'] as const;
 /** When the household usually opens its windows. */
 export const WINDOW_HABITS = ['closed', 'morning', 'evening', 'mostly-open'] as const;
@@ -32,6 +35,7 @@ export const MODES = [
   'bus',
   'metro',
 ] as const;
+/** What a regular activity is for; sets its breathing effort. */
 export const ACTIVITY_KINDS = [
   'commute',
   'school-run',
@@ -100,6 +104,7 @@ const placeSchema = z.strictObject({
   longitude: z.number().min(-180).max(180),
 });
 
+/** A household: place, members, home and regular activities, validated in the browser and on the server. */
 export const profileSchema = z
   .strictObject({
     place: placeSchema,
@@ -133,6 +138,7 @@ const airHourSchema = z.strictObject({
   so2: concentration,
 });
 
+/** A 48-hour hourly forecast of the six pollutants for one place, and where it came from. */
 export const forecastSchema = z.strictObject({
   source: z.enum(['open-meteo', 'sample']),
   timezone: z.string().min(1).max(64),
@@ -198,12 +204,14 @@ export interface CitedItem {
   readonly text: string;
   readonly cites: readonly string[];
 }
+/** The AI's personal advice: a summary and cited items per section. */
 export interface Advice {
   readonly summary: string;
   readonly routine: readonly CitedItem[];
   readonly indoor: readonly CitedItem[];
   readonly alternatives: readonly CitedItem[];
 }
+/** The AI's answer to one question, with the fact ids it cites. */
 export interface AskAnswer {
   readonly answer: string;
   readonly cites: readonly string[];

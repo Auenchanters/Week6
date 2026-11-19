@@ -19,6 +19,7 @@ interface Fetched {
   readonly error: string;
 }
 
+/** The household state and the actions that change it, as `useHousehold` returns them. */
 export interface Household {
   readonly profile: Profile | null;
   readonly forecast: Forecast | null;

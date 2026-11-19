@@ -118,19 +118,23 @@ export const PURIFIER_CADR_M3_PER_H: Readonly<Record<Purifier, number>> = {
  * et al., Atmos. Environ. 2013 for gas and electric cooking; Lee & Wang, Indoor Air 2004 for incense;
  * Klepeis et al., JAWMA 2003 for cigarettes (one per hour of smoking).
  */
+/** PM2.5 emitted indoors per hour of cooking, by fuel (mg/h). */
 export const COOKING_EMISSION_MG_PER_H: Readonly<Record<CookingFuel, number>> = {
   induction: 1.5,
   lpg: 4,
   kerosene: 25,
   biomass: 200,
 };
+/** PM2.5 emitted indoors per hour of heating, by heater (mg/h). */
 export const HEATER_EMISSION_MG_PER_H: Readonly<Record<Heater, number>> = {
   none: 0,
   electric: 0,
   kerosene: 8,
   'coal-wood': 60,
 };
+/** PM2.5 emitted per hour of burning incense (mg/h). */
 export const INCENSE_EMISSION_MG_PER_H = 20;
+/** PM2.5 emitted per hour of smoking indoors, one cigarette an hour (mg/h). */
 export const CIGARETTE_EMISSION_MG_PER_H = 12;
 
 /**
@@ -140,12 +144,14 @@ export const CIGARETTE_EMISSION_MG_PER_H = 12;
  * angithi about 0.6 kg/h at 2.4 kg CO2/kg. Biomass is counted as 30% non-renewable (Bailis et al.,
  * Nature Climate Change 2015).
  */
+/** CO2 per hour of cooking, by fuel (kg/h). */
 export const COOKING_CO2_KG_PER_H: Readonly<Record<CookingFuel, number>> = {
   induction: 1.07,
   lpg: 0.6,
   kerosene: 0.63,
   biomass: 0.5,
 };
+/** CO2 per hour of heating, by heater (kg/h). */
 export const HEATER_CO2_KG_PER_H: Readonly<Record<Heater, number>> = {
   none: 0,
   electric: 1.07,
@@ -192,5 +198,7 @@ export const DAYS_PER_WEEK = 7;
  * PM2.5 from open burning of garden and household waste, grams per kg burned (Akagi et al., Atmos.
  * Chem. Phys. 2011, garbage burning 9.8 g/kg), and a typical 2 kg burned per week by a household.
  */
+/** PM2.5 released per kg of waste burned in the open (g/kg). */
 export const WASTE_BURNING_PM_G_PER_KG = 9.8;
+/** Waste a household that burns it burns in a week (kg). */
 export const WASTE_BURNED_KG_PER_WEEK = 2;

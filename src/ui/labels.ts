@@ -20,6 +20,7 @@ import type {
   WindowHabit,
 } from '../shared/schema.js';
 
+/** The words shown for each age band. */
 export const AGE_LABELS: Readonly<Record<AgeBand, string>> = {
   under5: 'Under 5',
   child: 'Child (5–12)',
@@ -27,34 +28,40 @@ export const AGE_LABELS: Readonly<Record<AgeBand, string>> = {
   adult: 'Adult',
   senior: 'Senior (65+)',
 };
+/** The words shown for each health condition. */
 export const CONDITION_LABELS: Readonly<Record<Condition, string>> = {
   asthma: 'Asthma',
   'heart-lung': 'Heart or lung condition',
   pregnant: 'Pregnant',
 };
+/** The words shown for each home air-tightness. */
 export const TIGHTNESS_LABELS: Readonly<Record<Tightness, string>> = {
   leaky: 'Leaky (old windows, gaps)',
   average: 'Average',
   tight: 'Tight (sealed windows)',
 };
+/** The words shown for each cooking fuel. */
 export const FUEL_LABELS: Readonly<Record<CookingFuel, string>> = {
   induction: 'Induction or electric',
   lpg: 'LPG',
   kerosene: 'Kerosene',
   biomass: 'Wood, dung or crop waste',
 };
+/** The words shown for each heater. */
 export const HEATER_LABELS: Readonly<Record<Heater, string>> = {
   none: 'No heater',
   electric: 'Electric heater',
   kerosene: 'Kerosene heater',
   'coal-wood': 'Coal or wood (angithi)',
 };
+/** The words shown for each purifier size. */
 export const PURIFIER_LABELS: Readonly<Record<Purifier, string>> = {
   none: 'No purifier',
   small: 'Small (150 m³/h)',
   medium: 'Medium (300 m³/h)',
   large: 'Large (450 m³/h)',
 };
+/** The words shown for each window habit. */
 export const WINDOW_LABELS: Readonly<Record<WindowHabit, string>> = {
   closed: 'Kept closed',
   morning: 'Opened in the morning',
@@ -72,6 +79,7 @@ export const MODE_LABELS: Readonly<Record<Mode, string>> = {
   bus: 'by bus',
   metro: 'by metro',
 };
+/** The words shown for each activity kind. */
 export const KIND_LABELS: Readonly<Record<ActivityKind, string>> = {
   commute: 'Commute',
   'school-run': 'School run',
@@ -81,6 +89,7 @@ export const KIND_LABELS: Readonly<Record<ActivityKind, string>> = {
   errands: 'Errands',
   'outdoor-work': 'Outdoor work',
 };
+/** The words shown for each pollutant. */
 export const POLLUTANT_LABELS: Readonly<Record<Pollutant, string>> = {
   pm25: 'PM2.5',
   pm10: 'PM10',
@@ -114,6 +123,7 @@ export const GUIDANCE_TEXT: Readonly<Record<GuidanceAction, string>> = {
   'talk-to-doctor': 'Talk to a doctor if breathing feels harder than usual.',
 };
 
+/** The words shown for each kind of change. */
 export const SWAP_CATEGORY_LABELS: Readonly<Record<SwapCategory, string>> = {
   travel: 'Getting around',
   home: 'Home air',
@@ -122,6 +132,7 @@ export const SWAP_CATEGORY_LABELS: Readonly<Record<SwapCategory, string>> = {
   protection: 'Protection',
   community: 'Community',
 };
+/** The words shown for each cost level. */
 export const COST_LABELS: Readonly<Record<Cost, string>> = {
   free: 'Free',
   low: 'Low cost',
