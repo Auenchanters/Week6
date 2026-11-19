@@ -66,6 +66,82 @@ function ErrorSummary({ errors }: { errors: readonly FieldError[] }): ReactEleme
   );
 }
 
+/** The landing text and the one-click sample family; editing a saved household shows a title only. */
+function Landing(props: {
+  readonly editing: boolean;
+  readonly onSample: () => void;
+}): ReactElement {
+  const { editing, onSample } = props;
+  return (
+    <section className="landing" aria-labelledby="landing-title">
+      <h1 id="landing-title">
+        {editing ? 'Edit your household' : 'Breathe easier through smog season'}
+      </h1>
+      {editing ? null : (
+        <>
+          <p className="landing__lead">
+            Clearday turns the day&apos;s air forecast into a plan for your family: low-emission
+            routines, indoor air hacks and sustainable alternatives for where you live and how you
+            live, and what each choice changes for your lungs and the climate.
+          </p>
+          <ul className="landing__points">
+            <li>See who in your home breathes the most, hour by hour.</li>
+            <li>Move walks, play and trips to the cleaner hours of the day.</li>
+            <li>Try home changes and see the effect before you spend a rupee.</li>
+          </ul>
+          <button type="button" className="btn btn--primary" onClick={onSample}>
+            See the sample family
+          </button>
+          <p className="field__hint">
+            Or describe your own household below. It stays on this device.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Submit, and Cancel when editing a saved household. */
+function FormActions(props: {
+  readonly editing: boolean;
+  readonly onCancel: () => void;
+}): ReactElement {
+  const { editing, onCancel } = props;
+  return (
+    <div className="actions">
+      <button type="submit" className="btn btn--primary">
+        {editing ? 'Save household' : 'Show my plan'}
+      </button>
+      {editing ? (
+        <button type="button" className="btn" onClick={onCancel}>
+          Cancel
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** The household draft being edited, its validation errors, and the submit that saves it. */
+function useDraftForm(saved: Profile | null, onSave: (profile: Profile) => void) {
+  const [draft, setDraft] = useState<Draft>(() => draftOf(saved));
+  const [errors, setErrors] = useState<readonly FieldError[]>([]);
+  const messages = useMemo(
+    () => Object.fromEntries(errors.map((e) => [e.id, e.message])),
+    [errors],
+  );
+
+  const change = (patch: Partial<Draft>): void => {
+    setDraft({ ...draft, ...patch });
+  };
+  const submit = (event: SyntheticEvent): void => {
+    event.preventDefault();
+    const result = validate(draft);
+    if ('profile' in result) onSave(result.profile);
+    else setErrors(result.errors);
+  };
+  return { draft, setDraft, change, errors, messages, submit };
+}
+
 /** The landing text and household form. */
 export function SetupPage(props: {
   readonly saved: Profile | null;
@@ -74,53 +150,16 @@ export function SetupPage(props: {
   readonly onCancel: () => void;
 }): ReactElement {
   const { saved, editing, onSave, onCancel } = props;
-  const [draft, setDraft] = useState<Draft>(() => draftOf(saved));
-  const [errors, setErrors] = useState<readonly FieldError[]>([]);
-  const messages = useMemo(
-    () => Object.fromEntries(errors.map((e) => [e.id, e.message])),
-    [errors],
-  );
-
-  const submit = (event: SyntheticEvent): void => {
-    event.preventDefault();
-    const result = validate(draft);
-    if ('profile' in result) onSave(result.profile);
-    else setErrors(result.errors);
-  };
+  const { draft, setDraft, change, errors, messages, submit } = useDraftForm(saved, onSave);
 
   return (
     <div className="setup">
-      <section className="landing" aria-labelledby="landing-title">
-        <h1 id="landing-title">
-          {editing ? 'Edit your household' : 'Breathe easier through smog season'}
-        </h1>
-        {editing ? null : (
-          <>
-            <p className="landing__lead">
-              Clearday turns the day&apos;s air forecast into a plan for your family: low-emission
-              routines, indoor air hacks and sustainable alternatives for where you live and how you
-              live, and what each choice changes for your lungs and the climate.
-            </p>
-            <ul className="landing__points">
-              <li>See who in your home breathes the most, hour by hour.</li>
-              <li>Move walks, play and trips to the cleaner hours of the day.</li>
-              <li>Try home changes and see the effect before you spend a rupee.</li>
-            </ul>
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => {
-                onSave(SAMPLE_PROFILE);
-              }}
-            >
-              See the sample family
-            </button>
-            <p className="field__hint">
-              Or describe your own household below. It stays on this device.
-            </p>
-          </>
-        )}
-      </section>
+      <Landing
+        editing={editing}
+        onSample={() => {
+          onSave(SAMPLE_PROFILE);
+        }}
+      />
       <form className="form" noValidate onSubmit={submit} aria-labelledby="form-title">
         <h2 id="form-title">Your household</h2>
         <ErrorSummary errors={errors} />
@@ -129,14 +168,14 @@ export function SetupPage(props: {
           place={draft.place}
           error={messages['f-place']}
           onPick={(place) => {
-            setDraft({ ...draft, place });
+            change({ place });
           }}
         />
         <MembersEditor
           members={draft.members}
           errors={messages}
           onChange={(members) => {
-            setDraft({ ...draft, members });
+            change({ members });
           }}
           onRemove={(i) => {
             setDraft(withoutMember(draft, i));
@@ -146,7 +185,7 @@ export function SetupPage(props: {
           home={draft.home}
           errors={messages}
           onChange={(patch) => {
-            setDraft({ ...draft, home: { ...draft.home, ...patch } });
+            change({ home: { ...draft.home, ...patch } });
           }}
         />
         <ActivitiesEditor
@@ -154,7 +193,7 @@ export function SetupPage(props: {
           members={draft.members}
           errors={messages}
           onChange={(activities) => {
-            setDraft({ ...draft, activities });
+            change({ activities });
           }}
         />
         <SelectField
@@ -164,19 +203,10 @@ export function SetupPage(props: {
           values={LANGUAGES}
           labels={LANGUAGE_NAMES}
           onChange={(language) => {
-            setDraft({ ...draft, language });
+            change({ language });
           }}
         />
-        <div className="actions">
-          <button type="submit" className="btn btn--primary">
-            {editing ? 'Save household' : 'Show my plan'}
-          </button>
-          {editing ? (
-            <button type="button" className="btn" onClick={onCancel}>
-              Cancel
-            </button>
-          ) : null}
-        </div>
+        <FormActions editing={editing} onCancel={onCancel} />
       </form>
     </div>
   );

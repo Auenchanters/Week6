@@ -23,22 +23,26 @@ function searchStatus(failed: string, done: boolean, count: number): string {
   return count === 0 ? 'No places found.' : `${count} places found. Use the arrow keys to choose.`;
 }
 
-/** The search box for the household's place; `id` is the field id errors link to. */
-export function PlaceSearch(props: {
-  readonly id: string;
-  readonly place: Place | null;
-  readonly error: string | undefined;
-  readonly onPick: (place: Place) => void;
-}): ReactElement {
-  const { id, place, error, onPick } = props;
-  const [query, setQuery] = useState(place?.name ?? '');
+/** What a finished search left behind, and which hit the arrow keys point at. */
+interface PlaceHits {
+  readonly hits: readonly PlaceHit[];
+  /** Whether the results are for `text` as typed now, not an older query. */
+  readonly done: boolean;
+  /** A failed search's message, or empty. */
+  readonly failed: string;
+  readonly active: number;
+  readonly setActive: (update: (index: number) => number) => void;
+}
+
+/**
+ * Searches for `text` while `searching`: 400 ms after typing stops, cancelling the earlier request,
+ * and points the active option back at the first hit when new results arrive.
+ */
+function usePlaceHits(text: string, searching: boolean): PlaceHits {
   const [hits, setHits] = useState<readonly PlaceHit[]>([]);
   const [searched, setSearched] = useState('');
   const [failed, setFailed] = useState('');
   const [active, setActive] = useState(0);
-  const [open, setOpen] = useState(false);
-  const text = query.trim();
-  const searching = text.length >= MIN_QUERY && text !== place?.name;
 
   useEffect(() => {
     if (!searching) return;
@@ -58,20 +62,39 @@ export function PlaceSearch(props: {
     };
   }, [searching, text]);
 
+  return { hits, done: searching && searched === text, failed, active, setActive };
+}
+
+/** The active option after an arrow key: one step down or up, kept inside the list. */
+const stepActive = (index: number, key: string, count: number): number =>
+  Math.max(0, Math.min(count - 1, index + (key === 'ArrowDown' ? 1 : -1)));
+
+/** The search box for the household's place; `id` is the field id errors link to. */
+export function PlaceSearch(props: {
+  readonly id: string;
+  readonly place: Place | null;
+  readonly error: string | undefined;
+  readonly onPick: (place: Place) => void;
+}): ReactElement {
+  const { id, place, error, onPick } = props;
+  const [query, setQuery] = useState(place?.name ?? '');
+  const [open, setOpen] = useState(false);
+  const text = query.trim();
+  const searching = text.length >= MIN_QUERY && text !== place?.name;
+  const { hits, done, failed, active, setActive } = usePlaceHits(text, searching);
+
   const choose = (hit: PlaceHit): void => {
     const picked = { ...hit, name: hit.name.slice(0, LIMITS.profile.placeNameMax) };
     onPick(picked);
     setQuery(picked.name);
     setOpen(false);
   };
-  const shown = open && searching && searched === text ? hits : [];
+  const shown = open && done ? hits : [];
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       setOpen(true);
-      setActive((i) =>
-        Math.max(0, Math.min(hits.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))),
-      );
+      setActive((i) => stepActive(i, e.key, hits.length));
     } else if (e.key === 'Escape') {
       setOpen(false);
     } else if (e.key === 'Enter' && shown.length > 0) {
@@ -80,7 +103,7 @@ export function PlaceSearch(props: {
     }
   };
 
-  const status = searchStatus(failed, searching && searched === text, hits.length);
+  const status = searchStatus(failed, done, hits.length);
 
   return (
     <div className="field place">
@@ -106,29 +129,7 @@ export function PlaceSearch(props: {
         }}
         onKeyDown={onKeyDown}
       />
-      <div
-        className="place__list"
-        id={`${id}-list`}
-        role="listbox"
-        aria-label="Matching places"
-        hidden={shown.length === 0}
-      >
-        {shown.map((hit, i) => (
-          <div
-            key={`${hit.name}-${hit.latitude}-${hit.longitude}`}
-            id={`${id}-opt-${i}`}
-            role="option"
-            tabIndex={-1}
-            aria-selected={i === active}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              choose(hit);
-            }}
-          >
-            {hit.name}
-          </div>
-        ))}
-      </div>
+      <PlaceList id={id} shown={shown} active={active} onChoose={choose} />
       <p className="visually-hidden" role="status">
         {status}
       </p>
@@ -162,5 +163,40 @@ function ChosenPlace(props: {
         Use sample: New Delhi
       </button>
     </p>
+  );
+}
+
+/** The matching places as a listbox; hidden when there is nothing to show. */
+function PlaceList(props: {
+  readonly id: string;
+  readonly shown: readonly PlaceHit[];
+  readonly active: number;
+  readonly onChoose: (hit: PlaceHit) => void;
+}): ReactElement {
+  const { id, shown, active, onChoose } = props;
+  return (
+    <div
+      className="place__list"
+      id={`${id}-list`}
+      role="listbox"
+      aria-label="Matching places"
+      hidden={shown.length === 0}
+    >
+      {shown.map((hit, i) => (
+        <div
+          key={`${hit.name}-${hit.latitude}-${hit.longitude}`}
+          id={`${id}-opt-${i}`}
+          role="option"
+          tabIndex={-1}
+          aria-selected={i === active}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onChoose(hit);
+          }}
+        >
+          {hit.name}
+        </div>
+      ))}
+    </div>
   );
 }

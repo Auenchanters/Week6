@@ -27,6 +27,7 @@ interface ApiFailure {
   readonly code: string;
   readonly message: string;
 }
+/** An API call's outcome: the parsed value, or the failure's public code and message. */
 export type ApiResult<T> = Result<T, ApiFailure>;
 
 /** One place a search found. */
