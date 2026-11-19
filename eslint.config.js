@@ -18,6 +18,8 @@ export default defineConfig(
       'artifacts/**',
       'playwright-report/**',
       'test-results/**',
+      'reports/**',
+      '.stryker-tmp/**',
     ],
   },
   {
@@ -41,6 +43,18 @@ export default defineConfig(
       '@typescript-eslint/explicit-module-boundary-types': 'error',
       '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+    },
+  },
+  {
+    // Size and complexity gates for shipped code. A function with more than 12 paths, 4 parameters
+    // or 3 levels of nesting gets split; a file past 300 lines of code gets divided by
+    // responsibility. Tests are exempt: a case table is long by design and reads top to bottom.
+    files: ['src/**/*.{ts,tsx}', 'server/**/*.ts', 'api/**/*.ts', 'scripts/**/*.ts'],
+    rules: {
+      complexity: ['error', 12],
+      'max-depth': ['error', 3],
+      'max-params': ['error', 4],
+      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
   {

@@ -9,7 +9,13 @@
  * Never does: retry inside the SDK (attempts = 1), log model text, or interpret errors; the
  * handler classifies them without ever echoing their messages.
  */
-import { ApiError, FinishReason, GoogleGenAI, ThinkingLevel } from '@google/genai';
+import {
+  ApiError,
+  FinishReason,
+  GoogleGenAI,
+  ThinkingLevel,
+  type GenerateContentResponse,
+} from '@google/genai';
 import type { Prompt } from '../src/ai/prompt.js';
 
 /** What one model call returns. */
@@ -62,24 +68,31 @@ export function createGeminiGenerator(apiKey: string, model: string): Generate {
         abortSignal: signal,
       },
     });
-  return async (prompt, signal) => {
-    let response;
-    const started = Date.now();
-    try {
-      response = await call(prompt, signal);
-    } catch (error) {
-      const overloaded = error instanceof ApiError && error.status === OVERLOADED;
-      if (!overloaded || Date.now() - started > RETRY_WINDOW_MS) throw error;
-      await new Promise((resolve) => setTimeout(resolve, OVERLOAD_PAUSE_MS));
-      signal.throwIfAborted();
-      response = await call(prompt, signal);
-    }
-    const usage = response.usageMetadata;
-    return {
-      text: response.text ?? '',
-      inputTokens: usage?.promptTokenCount ?? 0,
-      outputTokens: (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0),
-      truncated: response.candidates?.[0]?.finishReason === FinishReason.MAX_TOKENS,
-    };
+  return async (prompt, signal) =>
+    toGeneration(await withOverloadRetry(() => call(prompt, signal), signal));
+}
+
+/** Runs `attempt`; after a fast 503 refusal, pauses and runs it once more. */
+async function withOverloadRetry<T>(attempt: () => Promise<T>, signal: AbortSignal): Promise<T> {
+  const started = Date.now();
+  try {
+    return await attempt();
+  } catch (error) {
+    const overloaded = error instanceof ApiError && error.status === OVERLOADED;
+    if (!overloaded || Date.now() - started > RETRY_WINDOW_MS) throw error;
+    await new Promise((resolve) => setTimeout(resolve, OVERLOAD_PAUSE_MS));
+    signal.throwIfAborted();
+    return attempt();
+  }
+}
+
+/** The text, billed token counts and cut-off flag of one SDK response. */
+function toGeneration(response: GenerateContentResponse): Generation {
+  const usage = response.usageMetadata;
+  return {
+    text: response.text ?? '',
+    inputTokens: usage?.promptTokenCount ?? 0,
+    outputTokens: (usage?.candidatesTokenCount ?? 0) + (usage?.thoughtsTokenCount ?? 0),
+    truncated: response.candidates?.[0]?.finishReason === FinishReason.MAX_TOKENS,
   };
 }

@@ -13,6 +13,7 @@ import type { AirHour } from '../shared/schema.js';
 
 /** The six NAQI pollutants. CO is in mg/m³; the rest in µg/m³. */
 export type Pollutant = 'pm25' | 'pm10' | 'no2' | 'o3' | 'co' | 'so2';
+/** All six pollutants, in the order the screen lists them. */
 export const POLLUTANTS: readonly Pollutant[] = ['pm25', 'pm10', 'no2', 'o3', 'co', 'so2'];
 
 /** The NAQI categories, mildest first; their order is the order of the index bands. */
@@ -103,8 +104,11 @@ export interface Naqi extends IndexValue {
   readonly subIndices: Readonly<Record<Pollutant, number>>;
 }
 
-/** Linear interpolation of `c` inside the band `[cLo, cHi]` onto `[iLo, iHi]`. */
-const interpolate = (c: number, cLo: number, cHi: number, iLo: number, iHi: number): number =>
+/** A closed range `[low, high]`. */
+type Span = readonly [low: number, high: number];
+
+/** Linear interpolation of `c` from the concentration band onto the index band. */
+const interpolate = (c: number, [cLo, cHi]: Span, [iLo, iHi]: Span): number =>
   iLo + ((c - cLo) * (iHi - iLo)) / (cHi - cLo);
 
 /** The NAQI category of an index value. */
@@ -118,7 +122,7 @@ export function naqiSubIndex(pollutant: Pollutant, concentration: number): numbe
   let cLo = 0;
   let iLo = 0;
   for (const [cHi, iHi] of NAQI_BREAKPOINTS[pollutant]) {
-    if (c <= cHi) return Math.round(interpolate(c, cLo, cHi, iLo, iHi));
+    if (c <= cHi) return Math.round(interpolate(c, [cLo, cHi], [iLo, iHi]));
     cLo = cHi;
     iLo = iHi;
   }
@@ -165,7 +169,7 @@ export function usAqiPm25(concentration: number): number {
   const band = US_PM25_BANDS.find(([, cHi]) => c <= cHi);
   if (!band) return 500;
   const [cLo, cHi, iLo, iHi] = band;
-  return Math.round(interpolate(c, cLo, cHi, iLo, iHi));
+  return Math.round(interpolate(c, [cLo, cHi], [iLo, iHi]));
 }
 
 /** The arithmetic mean; 0 for an empty list. */

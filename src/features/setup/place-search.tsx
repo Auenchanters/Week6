@@ -16,6 +16,13 @@ import { searchPlaces, type PlaceHit } from '../client/api.js';
 const DEBOUNCE_MS = 400;
 const MIN_QUERY = 2;
 
+/** What the polite live region announces: a failure, the result count once a search is done, or nothing. */
+function searchStatus(failed: string, done: boolean, count: number): string {
+  if (failed) return failed;
+  if (!done) return '';
+  return count === 0 ? 'No places found.' : `${count} places found. Use the arrow keys to choose.`;
+}
+
 /** The search box for the household's place; `id` is the field id errors link to. */
 export function PlaceSearch(props: {
   readonly id: string;
@@ -73,14 +80,7 @@ export function PlaceSearch(props: {
     }
   };
 
-  let status = '';
-  if (failed) status = failed;
-  else if (searching && searched === text) {
-    status =
-      hits.length === 0
-        ? 'No places found.'
-        : `${hits.length} places found. Use the arrow keys to choose.`;
-  }
+  const status = searchStatus(failed, searching && searched === text, hits.length);
 
   return (
     <div className="field place">
@@ -133,24 +133,34 @@ export function PlaceSearch(props: {
         {status}
       </p>
       <FieldError id={id} error={error} />
-      <p className="place__chosen">
-        {place ? (
-          <>
-            Chosen place: <strong>{place.name}</strong>
-          </>
-        ) : (
-          'No place chosen yet.'
-        )}{' '}
-        <button
-          type="button"
-          className="link"
-          onClick={() => {
-            choose({ ...SAMPLE_PROFILE.place });
-          }}
-        >
-          Use sample: New Delhi
-        </button>
-      </p>
+      <ChosenPlace
+        place={place}
+        onSample={() => {
+          choose({ ...SAMPLE_PROFILE.place });
+        }}
+      />
     </div>
+  );
+}
+
+/** The place picked so far, with a shortcut to the bundled sample. */
+function ChosenPlace(props: {
+  readonly place: Place | null;
+  readonly onSample: () => void;
+}): ReactElement {
+  const { place, onSample } = props;
+  return (
+    <p className="place__chosen">
+      {place ? (
+        <>
+          Chosen place: <strong>{place.name}</strong>
+        </>
+      ) : (
+        'No place chosen yet.'
+      )}{' '}
+      <button type="button" className="link" onClick={onSample}>
+        Use sample: New Delhi
+      </button>
+    </p>
   );
 }

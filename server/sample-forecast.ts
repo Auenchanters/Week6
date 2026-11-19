@@ -40,9 +40,8 @@ const SHAPE: readonly (readonly [number, number])[] = [
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-/** One sample hour, scaled by `factor` (tomorrow is a little worse, as smog episodes build). */
-function sampleHour(date: string, hour: number, base: number, o3: number, factor: number): AirHour {
-  const pm25 = round1(base * factor);
+/** One sample hour with the given PM2.5 and ozone; the other pollutants follow PM2.5. */
+function sampleHour(date: string, hour: number, pm25: number, o3: number): AirHour {
   return {
     time: `${date}T${String(hour).padStart(2, '0')}:00`,
     pm25,
@@ -54,9 +53,10 @@ function sampleHour(date: string, hour: number, base: number, o3: number, factor
   };
 }
 
-/** One day of sample hours, every PM2.5 value scaled by `factor`. */
+/** One day of sample hours, every PM2.5 value scaled by `factor` (tomorrow is a little worse, as
+ * smog episodes build). */
 const day = (date: string, factor: number): AirHour[] =>
-  SHAPE.map(([pm25, o3], hour) => sampleHour(date, hour, pm25, o3, factor));
+  SHAPE.map(([pm25, o3], hour) => sampleHour(date, hour, round1(pm25 * factor), o3));
 
 /** The sample forecast for a two-day window starting on `today` (`YYYY-MM-DD`). */
 export function sampleForecast(today: string, tomorrow: string): Forecast {

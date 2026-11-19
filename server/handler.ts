@@ -81,6 +81,21 @@ export interface HandlerOptions {
 /** Facts about a request gathered for its log line as handling proceeds. */
 type Trace = RequestFacts;
 
+/** One request in flight: the request, its id, and the facts its log line will carry. */
+interface InFlight {
+  readonly request: Request;
+  readonly requestId: string;
+  readonly trace: Trace;
+}
+
+/** One model job: the prompt, the fact ids its answer may cite, how to read it, and its body key. */
+interface Job<T> {
+  readonly prompt: Prompt;
+  readonly ids: FactIds;
+  readonly parse: (text: string, ids: FactIds) => Read<T>;
+  readonly key: 'advice' | 'answer';
+}
+
 /** A busy provider: the SDK's `ApiError` with 429 (quota spent) or 503 (model overloaded). */
 const isBusy = (error: unknown): boolean =>
   error instanceof ApiError && (error.status === 429 || error.status === 503);
@@ -148,15 +163,9 @@ export function createHandler(
    * One model call for `prompt`, read by `parse`, answered from the cache when the same prompt
    * was answered before. Returns the JSON body: the parsed value under `key`, plus call metadata.
    */
-  async function answer<T>(
-    request: Request,
-    prompt: Prompt,
-    ids: FactIds,
-    parse: (text: string, ids: FactIds) => Read<T>,
-    key: 'advice' | 'answer',
-    trace: Trace,
-    requestId: string,
-  ): Promise<Response> {
+  async function answer<T>(call: InFlight, job: Job<T>): Promise<Response> {
+    const { request, trace, requestId } = call;
+    const { prompt, ids, parse, key } = job;
     const cacheKey = promptKey(prompt);
     const cached = answers.get(cacheKey);
     if (cached !== undefined) {
@@ -204,12 +213,8 @@ export function createHandler(
     return Response.json(body, { headers: NO_STORE });
   }
 
-  async function route(
-    request: Request,
-    path: Route,
-    requestId: string,
-    trace: Trace,
-  ): Promise<Response> {
+  async function route(call: InFlight, path: Route): Promise<Response> {
+    const { request, trace } = call;
     if (path === '/api/health') {
       const ai = generate ? 'configured' : 'not_configured';
       return Response.json({ status: 'ok', ai }, { headers: NO_STORE });
@@ -235,12 +240,12 @@ export function createHandler(
       const { profile, forecast, dayIndex } = await readJsonBody(request, adviceRequestSchema);
       const plan = buildDayPlan(profile, forecast, dayIndex);
       const prompt = buildAdvicePrompt(plan, profile);
-      return answer(request, prompt, factIds(plan), parseAdvice, 'advice', trace, requestId);
+      return answer(call, { prompt, ids: factIds(plan), parse: parseAdvice, key: 'advice' });
     }
     const { profile, forecast, dayIndex, question } = await readJsonBody(request, askRequestSchema);
     const plan = buildDayPlan(profile, forecast, dayIndex);
     const prompt = buildAskPrompt(plan, profile, question);
-    return answer(request, prompt, factIds(plan), parseAskAnswer, 'answer', trace, requestId);
+    return answer(call, { prompt, ids: factIds(plan), parse: parseAskAnswer, key: 'answer' });
   }
 
   return async (request) => {
@@ -255,7 +260,7 @@ export function createHandler(
       if (!isRoute(path)) throw new AppError('NOT_FOUND');
       const method = ROUTES[path];
       if (request.method !== method) throw new AppError('METHOD_NOT_ALLOWED', { allow: method });
-      response = await route(request, path, requestId, trace);
+      response = await route({ request, requestId, trace }, path);
     } catch (error) {
       const failure = toAppError(error, request);
       code = failure.code;
