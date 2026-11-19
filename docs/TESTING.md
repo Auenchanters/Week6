@@ -29,7 +29,7 @@ push, then the Playwright journeys and `npm audit`.
 Coverage says a line ran; mutation testing says a test would notice if the line were wrong. Stryker
 (`npm run test:mutation`, configured in `stryker.config.json`) makes small changes to the engine in
 `src/domain` (flipped comparisons, swapped operators, emptied strings and arrays) and runs the
-engine's own tests (`vitest.mutation.config.ts`) against each one. The run fails below 75%.
+engine's own tests (`vitest.mutation.config.ts`) against each one. The run fails below 90%.
 
 Last run, 2026-11-19: **96.9%**. Of 890 valid mutants, 851 were killed and 11 timed out (the mutant made a
 test hang, which counts as caught); 28 survived. Another 40 did not compile and are not counted.

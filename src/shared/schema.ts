@@ -145,22 +145,39 @@ export const forecastSchema = z.strictObject({
   hours: z.array(airHourSchema).length(LIMITS.forecast.hours),
 });
 
+/** An age band; children and older adults get stricter guidance. */
 export type AgeBand = (typeof AGE_BANDS)[number];
+/** A health condition that makes a person more sensitive to polluted air. */
 export type Condition = (typeof CONDITIONS)[number];
+/** How leaky the home is, which sets how fast outdoor air gets in. */
 export type Tightness = (typeof TIGHTNESS)[number];
+/** The fuel the home cooks with. */
 export type CookingFuel = (typeof COOKING_FUELS)[number];
+/** The kind of space heater, if any. */
 export type Heater = (typeof HEATERS)[number];
+/** The size of air purifier, if any. */
 export type Purifier = (typeof PURIFIERS)[number];
+/** How the household uses its windows. */
 export type WindowHabit = (typeof WINDOW_HABITS)[number];
+/** How someone travels on an outing. */
 export type Mode = (typeof MODES)[number];
+/** What an outing is, such as a commute, a school run, a walk or play. */
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
+/** A language the AI can write advice in. */
 export type Language = (typeof LANGUAGES)[number];
+/** One person in the household, as validated. */
 export type Member = z.infer<typeof memberSchema>;
+/** The home settings that change indoor air, as validated. */
 export type Home = z.infer<typeof homeSchema>;
+/** One regular outing, as validated. */
 export type Activity = z.infer<typeof activitySchema>;
+/** A named place with its coordinates. */
 export type Place = z.infer<typeof placeSchema>;
+/** The whole household: place, people, home, outings and advice language. */
 export type Profile = z.infer<typeof profileSchema>;
+/** One hour of the six pollutants, in micrograms per cubic metre. */
 export type AirHour = z.infer<typeof airHourSchema>;
+/** A validated 48-hour forecast. */
 export type Forecast = z.infer<typeof forecastSchema>;
 
 /** The ids the AI may cite: the plan's fact ids, never empty (every plan states `air.day`). */
@@ -190,7 +207,9 @@ const askAnswerShape = (ids: FactIds) =>
     cites: z.array(z.enum(ids)).max(MAX_CITES),
   });
 
+/** The advice schema for one plan, its fact-id enum built from that plan's ids. */
 export type AdviceSchema = ReturnType<typeof adviceShape>;
+/** The answer schema for one question, its fact-id enum built from the plan's ids. */
 export type AskAnswerSchema = ReturnType<typeof askAnswerShape>;
 
 /** The AI's advice for one plan; every item must cite at least one fact id of that plan. */
@@ -227,6 +246,7 @@ export const aiMetaSchema = z.strictObject({
   dropped: z.number().int().min(0),
   requestId: z.uuid(),
 });
+/** Metadata about one model call, returned with every AI answer. */
 export type AiMeta = z.infer<typeof aiMetaSchema>;
 
 /** `POST /api/plan`: the household and the forecast the browser planned with. */

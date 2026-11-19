@@ -5,7 +5,7 @@ are enforced by tooling; the table at the end links each one to the config that 
 
 ## 1. The shape of the code
 
-About 6,100 lines of TypeScript ship (excluding tests and styles). The largest part, about 1,400
+About 6,900 lines of TypeScript ship (excluding tests and styles). The largest part, about 1,400
 lines, is the engine in `src/domain`: nine pure modules that turn a forecast and a household into
 numbers. Everything else is arranged around it.
 
@@ -46,13 +46,17 @@ not compute.
 
 - Every module opens with a header saying what it does and what it never does, so a reader knows the
   module's boundary before reading its code.
-- Every exported symbol has a TSDoc comment; every physical constant names its source and units in
+- Every exported symbol has a doc comment, and `eslint-plugin-jsdoc` fails the build when one is missing (adding the rule found 24 exported types without one); every physical constant names its source and units in
   `src/domain/coefficients.ts`, and [METHODS.md](METHODS.md) shows the formulas.
 - Names carry units (`doseSavedUg`, `co2SavedKg`, `HEATER_EMISSION_MG_PER_H`), so a mismatched unit
   reads wrong at the call site.
-- Functions stay small: lint fails any function above complexity 12, four parameters or three levels
-  of nesting, and any file above 300 lines of code. When a function grew past that, it was split by
-  responsibility (for example, the Gemini adapter is now `withOverloadRetry` and `toGeneration`).
+- Functions stay small: lint fails any function above complexity 10, 15 statements, 80 lines, four
+  parameters, three levels of nesting or three nested callbacks, and any file above 250 lines of code.
+  When a function grew past that, it was split by responsibility: the Gemini adapter is
+  `withOverloadRetry` and `toGeneration`; the request handler is a route table (`HANDLERS`) over
+  small functions, with model-failure handling in `server/model-call.ts` and the answer cache in
+  `server/answer-cache.ts`; each setup editor is a list of cards built from named parts
+  (`KindAndMode`, `WhoGoes`, `Timing`, `FlexibleWindow`; `NameAndAge`, `Conditions`, `AwayHours`).
 
 ## 4. Known limitations
 
@@ -60,9 +64,6 @@ Stated plainly, so a reader does not have to discover them:
 
 - **The indoor model is one well-mixed room.** Real homes vary room by room; a kitchen is worse than a
   bedroom while cooking. The numbers are estimates for a typical home, not measurements.
-- **The setup editors are long components.** `src/features/setup/activities-editor.tsx` and `src/features/setup/members-editor.tsx` are
-  mostly form markup (about 120 to 170 lines of JSX each). Function length is not gated for that
-  reason; their logic lives in `src/features/setup/draft.ts`, which is.
 - **Rate limits and the answer cache are per instance unless a shared store is configured.** With
   Upstash Redis set, quotas are shared; without it (the default), each warm instance counts on its own,
   which is logged once at start-up. The answer cache is always per instance and is cleared whole at
@@ -76,18 +77,20 @@ Stated plainly, so a reader does not have to discover them:
 
 ## 5. Enforced metrics
 
-| Metric                                        | Gate                                                               | Where                             |
-| --------------------------------------------- | ------------------------------------------------------------------ | --------------------------------- |
-| Lint (strict type-checked, jsx-a11y strict)   | 0 errors, 0 warnings, suppression comments disallowed              | `eslint.config.js`                |
-| Complexity / nesting / parameters / file size | ≤ 12 / ≤ 3 / ≤ 4 / ≤ 300 lines of code                             | `eslint.config.js`                |
-| Type assertions, `any`, `@ts-` comments       | none, tests included                                               | `eslint.config.js`                |
-| Types                                         | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` | `tsconfig.base.json`              |
-| Coverage                                      | 100% statements, branches, functions, lines                        | `vitest.config.ts`                |
-| Mutation score (engine)                       | build breaks below 75%; last measured in [TESTING.md](TESTING.md)  | `stryker.config.json`             |
-| Layer boundaries and engine purity            | a test parses every import                                         | `tests/unit/architecture.test.ts` |
-| Dead code and unused dependencies             | none                                                               | `knip.json`                       |
-| Bundle                                        | entry chunk < 250 kB raw / 80 kB gzip                              | `scripts/bundle-budget.ts`        |
-| Dependencies                                  | `npm audit` reports 0 at the moderate level, full tree             | `.github/workflows/ci.yml`        |
-| Formatting                                    | Prettier check                                                     | `.prettierrc.json`                |
+| Metric                                      | Gate                                                                | Where                             |
+| ------------------------------------------- | ------------------------------------------------------------------- | --------------------------------- |
+| Lint (strict type-checked, jsx-a11y strict) | 0 errors, 0 warnings, suppression comments disallowed               | `eslint.config.js`                |
+| Function size and shape                     | complexity ≤ 10, ≤ 15 statements, ≤ 80 lines, ≤ 4 params, depth ≤ 3 | `eslint.config.js`                |
+| File size                                   | ≤ 250 lines of code                                                 | `eslint.config.js`                |
+| Documentation                               | a doc comment on every export                                       | `eslint.config.js` (jsdoc)        |
+| Type assertions, `any`, `@ts-` comments     | none, tests included                                                | `eslint.config.js`                |
+| Types                                       | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`  | `tsconfig.base.json`              |
+| Coverage                                    | 100% statements, branches, functions, lines                         | `vitest.config.ts`                |
+| Mutation score (engine)                     | build breaks below 90%; last measured in [TESTING.md](TESTING.md)   | `stryker.config.json`             |
+| Layer boundaries and engine purity          | a test parses every import                                          | `tests/unit/architecture.test.ts` |
+| Dead code and unused dependencies           | none                                                                | `knip.json`                       |
+| Bundle                                      | entry chunk < 250 kB raw / 80 kB gzip                               | `scripts/bundle-budget.ts`        |
+| Dependencies                                | `npm audit` reports 0 at the moderate level, full tree              | `.github/workflows/ci.yml`        |
+| Formatting                                  | Prettier check                                                      | `.prettierrc.json`                |
 
 All of it runs with one command, `npm run verify`, and in CI on every push.

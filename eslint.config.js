@@ -2,6 +2,7 @@
 import js from '@eslint/js';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
+import jsdoc from 'eslint-plugin-jsdoc';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';
 
@@ -46,15 +47,42 @@ export default defineConfig(
     },
   },
   {
-    // Size and complexity gates for shipped code. A function with more than 12 paths, 4 parameters
-    // or 3 levels of nesting gets split; a file past 300 lines of code gets divided by
-    // responsibility. Tests are exempt: a case table is long by design and reads top to bottom.
+    // Size and complexity gates for shipped code. A function past 10 paths, 15 statements, 80 lines,
+    // 4 parameters, 3 levels of nesting or 3 nested callbacks gets split by responsibility (a React
+    // component into named parts); a file past 250 lines of code gets divided. Tests are exempt: a
+    // case table is long by design and reads top to bottom.
     files: ['src/**/*.{ts,tsx}', 'server/**/*.ts', 'api/**/*.ts', 'scripts/**/*.ts'],
     rules: {
-      complexity: ['error', 12],
+      complexity: ['error', 10],
+      'max-statements': ['error', 15],
+      'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
       'max-depth': ['error', 3],
       'max-params': ['error', 4],
-      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+      'max-nested-callbacks': ['error', 3],
+      'max-lines': ['error', { max: 250, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    // Documentation coverage, enforced: every exported function, constant, interface and type in
+    // shipped code carries a doc comment, so "every export is documented" is a gate, not a claim.
+    files: ['src/**/*.{ts,tsx}', 'server/**/*.ts', 'api/**/*.ts', 'scripts/**/*.ts'],
+    plugins: { jsdoc },
+    rules: {
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          publicOnly: true,
+          require: {
+            FunctionDeclaration: true,
+            ClassDeclaration: true,
+            ArrowFunctionExpression: true,
+            FunctionExpression: true,
+          },
+          contexts: ['TSInterfaceDeclaration', 'TSTypeAliasDeclaration', 'VariableDeclaration'],
+        },
+      ],
+      'jsdoc/check-alignment': 'error',
+      'jsdoc/no-multi-asterisks': 'error',
     },
   },
   {

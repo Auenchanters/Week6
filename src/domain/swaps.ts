@@ -12,7 +12,9 @@ import type { Activity, Home, Mode, Profile, Purifier } from '../shared/schema.j
 import { PURIFIER_CADR_M3_PER_H } from './coefficients.js';
 import { householdDay, weeklyFootprint } from './household.js';
 
+/** The part of daily life a change touches; the ledger groups changes by it. */
 export type SwapCategory = 'travel' | 'home' | 'cooking' | 'heating' | 'protection' | 'community';
+/** A change's rough up-front cost, as a band rather than a price that varies by city. */
 export type Cost = 'free' | 'low' | 'medium' | 'high';
 
 /** A travel change: one trip, from its current mode to a cleaner one. */

@@ -25,6 +25,7 @@ export const NAQI_CATEGORIES = [
   'very-poor',
   'severe',
 ] as const;
+/** One of the six India NAQI categories, from good to severe. */
 export type NaqiCategory = (typeof NAQI_CATEGORIES)[number];
 
 /** Upper index value of each NAQI band and its category (each band starts where the last ended). */

@@ -53,7 +53,9 @@ npm run preflight      # repo size, single branch, file hygiene, README headings
 | --------------------------------------------------------------------------------- | --------------------------------------------- |
 | No `any`, no type assertions (`as`), no `@ts-` comments, no lint-disable comments | `eslint.config.js` (`noInlineConfig`, rules)  |
 | Strict type-checked lint, accessible JSX, zero warnings                           | `npm run lint` (`--max-warnings=0`)           |
-| Function complexity ≤ 12, nesting ≤ 3, parameters ≤ 4, files ≤ 300 lines of code  | `eslint.config.js` (shipped code)             |
+| Functions: complexity ≤ 10, ≤ 15 statements, ≤ 80 lines, ≤ 4 params, nesting ≤ 3  | `eslint.config.js` (shipped code)             |
+| Files ≤ 250 lines of code; every export has a doc comment                         | `eslint.config.js` (`eslint-plugin-jsdoc`)    |
+| Engine mutation score ≥ 90%                                                       | `stryker.config.json` (`break: 90`)           |
 | Layer order: shared → domain → ai/ui → features; server uses shared, domain, ai   | `tests/unit/architecture.test.ts`             |
 | The engine never reads the clock, randomness, network or storage                  | `tests/unit/architecture.test.ts`             |
 | 100% statements, branches, functions and lines                                    | `vitest.config.ts` thresholds                 |
@@ -65,7 +67,7 @@ npm run preflight      # repo size, single branch, file hygiene, README headings
 ## Conventions
 
 - Every module opens with a header comment saying what it does and what it never does.
-- Every exported symbol has a TSDoc comment. Physical constants cite their source in
+- Every exported symbol has a doc comment (lint fails without one). Physical constants cite their source in
   `src/domain/coefficients.ts` and [docs/METHODS.md](docs/METHODS.md).
 - Errors cross the server boundary only as catalogued codes from `server/errors.ts`.
 - Expected failures in the browser are values (`Result<T, E>` in `src/shared/result.ts`), not throws.
