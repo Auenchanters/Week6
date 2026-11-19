@@ -98,7 +98,7 @@ function factsFor(plan: Omit<DayPlan, 'facts'>, profile: Profile): Fact[] {
   const facts: Fact[] = [
     {
       id: 'air.day',
-      text: `${plan.date} India AQI ${whole(day.value)} (${day.category}), driven by ${day.dominant}; US AQI for PM2.5 ${whole(plan.usAqi)}.`,
+      text: `${plan.date} India AQI ${whole(day.value)} (${day.category}; an index, not µg/m³), driven by ${day.dominant}; US AQI for PM2.5 ${whole(plan.usAqi)}.`,
     },
     {
       id: 'air.cleanest',

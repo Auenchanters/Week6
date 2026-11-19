@@ -2,7 +2,7 @@
 
 exports[`buildDayPlan on the sample household > matches the recorded facts text 1`] = `
 [
-  "air.day: 2026-11-18 India AQI 384 (very-poor), driven by pm25; US AQI for PM2.5 308.",
+  "air.day: 2026-11-18 India AQI 384 (very-poor; an index, not µg/m³), driven by pm25; US AQI for PM2.5 308.",
   "air.cleanest: Cleanest daytime hours: 14:00–16:00, PM2.5 about 125 µg/m³.",
   "air.worst: Worst hour: 08:00, PM2.5 about 302 µg/m³.",
   "indoor.mean: Modelled indoor PM2.5 averages 206 µg/m³; 79% of it comes from outdoors.",
