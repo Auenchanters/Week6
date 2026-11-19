@@ -17,7 +17,7 @@ import {
 } from 'vitest';
 import { z } from 'zod';
 import type { AirClient } from '../../server/air.js';
-import { handlerFromEnv } from '../../server/env.js';
+import { handlerFromEnv, withoutRouteSegment } from '../../server/env.js';
 import { createHandler, type HandlerOptions } from '../../server/handler.js';
 import type { Generate, Generation } from '../../server/provider.js';
 import { createMemoryLimits, type Limits } from '../../server/rate-limit.js';
@@ -1070,5 +1070,36 @@ describe('handlerFromEnv', () => {
     });
     // Open-Meteo is unreachable in this stub, so the sample forecast keeps the route working.
     expect(await response.json()).toMatchObject({ source: 'sample' });
+  });
+});
+
+describe('withoutRouteSegment (the dynamic Vercel function)', () => {
+  it('drops the route parameter Vercel adds, so a GET query still passes its strict schema', async () => {
+    const air = fakeAir();
+    const response = await withoutRouteSegment(handlerWith({ air }))(
+      get('/api/air?lat=28.61&lon=77.21&route=air'),
+    );
+    expect(response.status).toBe(200);
+    expect(air.forecast).toHaveBeenCalledWith(28.61, 77.21);
+  });
+
+  it('keeps any other unknown parameter, which the schema still rejects', async () => {
+    const response = await withoutRouteSegment(handlerWith())(
+      get('/api/places?q=Pune&route=places&extra=1'),
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it('passes a GET without the parameter and any POST through unchanged', async () => {
+    const seen: Request[] = [];
+    const handler = withoutRouteSegment((request) => {
+      seen.push(request);
+      return Promise.resolve(new Response(null, { status: 204 }));
+    });
+    const plain = get('/api/health');
+    const posted = plan();
+    await handler(plain);
+    await handler(posted);
+    expect(seen).toEqual([plain, posted]);
   });
 });

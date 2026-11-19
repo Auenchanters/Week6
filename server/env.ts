@@ -65,3 +65,21 @@ export function handlerFromEnv(env: Env): (request: Request) => Promise<Response
     ...(origin ? { origin } : {}),
   });
 }
+
+/** A Fetch handler, as the platform calls it. */
+type Fetch = (request: Request) => Promise<Response>;
+
+/**
+ * `handler` as the dynamic Vercel function `api/[route].ts` must call it. Vercel passes the path
+ * segment as a `route` query parameter, which the strict query schemas of `GET /api/air` and
+ * `GET /api/places` would reject, so it is removed first. Only GET requests read the query, so a
+ * POST (whose body must not be copied) passes through as it came.
+ */
+export function withoutRouteSegment(handler: Fetch): Fetch {
+  return (request) => {
+    const url = new URL(request.url);
+    if (request.method !== 'GET' || !url.searchParams.has('route')) return handler(request);
+    url.searchParams.delete('route');
+    return handler(new Request(url, { headers: request.headers, signal: request.signal }));
+  };
+}
