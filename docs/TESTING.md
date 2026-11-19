@@ -23,3 +23,33 @@ push, then the Playwright journeys and `npm audit`.
 | End to end                  | `tests/e2e/`                                                          | Chromium on desktop and mobile against the production build under the production CSP with `/api` mocked: the sample journey, a keyboard-only journey, and axe at WCAG 2.2 A/AA with zero violations in light and dark mode.                                                                                                        |
 | Runtime and budget          | `scripts/runtime-smoke.mjs`, `scripts/bundle-budget.ts`               | The emitted API loads in plain Node ESM and runs the sample household through the gate and engine; the entry chunk stays under 250 kB raw / 80 kB gzip.                                                                                                                                                                            |
 | Live smoke                  | `scripts/live-smoke.ts`, `.github/workflows/live.yml`                 | Against the deployment: health, public page, security headers, and one real advice request validated against the schemas.                                                                                                                                                                                                          |
+
+## Mutation testing
+
+Coverage says a line ran; mutation testing says a test would notice if the line were wrong. Stryker
+(`npm run test:mutation`, configured in `stryker.config.json`) makes small changes to the engine in
+`src/domain` (flipped comparisons, swapped operators, emptied strings and arrays) and runs the
+engine's own tests (`vitest.mutation.config.ts`) against each one. The run fails below 75%.
+
+Last run, 2026-11-19: **96.9%**. Of 890 valid mutants, 851 were killed and 11 timed out (the mutant made a
+test hang, which counts as caught); 28 survived. Another 40 did not compile and are not counted.
+
+| Module                       | Score |
+| ---------------------------- | ----- |
+| `src/domain/coefficients.ts` | 100%  |
+| `src/domain/guidance.ts`     | 100%  |
+| `src/domain/household.ts`    | 100%  |
+| `src/domain/plan.ts`         | 98.0% |
+| `src/domain/swaps.ts`        | 96.7% |
+| `src/domain/exposure.ts`     | 96.5% |
+| `src/domain/aqi.ts`          | 96.1% |
+| `src/domain/indoor.ts`       | 93.9% |
+| `src/domain/routine.ts`      | 92.2% |
+
+Most survivors are equivalent mutants: changes that cannot alter any output. For example, heater
+hours do not matter when there is no heater, so mutating the `heater === 'none'` guard in
+`src/domain/indoor.ts` changes nothing a test could observe. The first run (95.4%) found a real gap, the swaps
+catalog's wording, costs and patches, which `tests/unit/swaps.test.ts` now pins rule by rule.
+
+Mutation testing is not part of `npm run verify` or CI: a full run takes about 10 minutes. Server
+and UI code is held to 100% coverage and the end-to-end suite instead.
