@@ -11,20 +11,80 @@
       content="Clearday helps families and communities get through severe winter smog: low-emission daily routines, indoor air hacks and sustainable alternatives for your place and lifestyle, with the direct impact of each choice explained."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://clearday-week6.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Clearday: cleaner air choices for your family" />
+    <meta
+      property="og:description"
+      content="A GenAI air-quality assistant for winter smog. Low-emission routines, indoor air hacks and sustainable alternatives for your place and household, with the impact of each choice in micrograms of PM2.5 and kilograms of CO2."
+    />
+    <meta property="og:url" content="https://clearday-week6.vercel.app/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Clearday",
+        "url": "https://clearday-week6.vercel.app/",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Any (web browser)",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "A GenAI assistant that helps families and communities navigate severe winter smog: it suggests low-emission daily routines, indoor air quality hacks and sustainable alternatives tailored to their location and lifestyle, and explains the direct impact of each choice.",
+        "featureList": [
+          "Live 48-hour air forecast with India's NAQI over six pollutants and the US AQI for PM2.5",
+          "Low-emission daily routine: flexible outings moved to the cleanest hours",
+          "Indoor air hacks from a physical indoor PM2.5 model with live what-if controls",
+          "Sustainable alternatives for travel, cooking, heating and waste, ranked by impact",
+          "Impact per choice: micrograms of PM2.5 inhaled per person, cigarette equivalents, kg of CO2 per week",
+          "Personal advice and grounded answers from Google Gemini that cite the engine's facts, in six languages"
+        ],
+        "isAccessibleForFree": true,
+        "accessibilityFeature": ["structuralNavigation", "highContrastDisplay", "longDescription"],
+        "codeRepository": "https://github.com/Auenchanters/Week6",
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
     <title>Clearday: cleaner air choices for your family</title>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
       <main>
-        <h1>Clearday</h1>
+        <h1>Clearday: breathe easier through winter smog</h1>
         <p>
-          Clearday is a GenAI air-quality assistant for families living through winter smog. It
-          needs JavaScript to run. It turns the day's air forecast into low-emission daily routines,
-          indoor air hacks and sustainable alternatives for your location and lifestyle, and
-          explains what each choice does for your lungs and the climate.
+          Clearday is a GenAI air-quality assistant for families and communities living through
+          severe winter smog and urban air pollution. It needs JavaScript to run; please enable it.
         </p>
-        <p>Please enable JavaScript in your browser to use it.</p>
+        <h2>What it does</h2>
+        <ul>
+          <li>
+            Reads a live 48-hour forecast for your place and rates it with India's NAQI (six
+            pollutants) and the US AQI for PM2.5.
+          </li>
+          <li>
+            Suggests a low-emission daily routine: moves flexible outings to the cleanest hours and
+            picks cleaner travel modes for each trip.
+          </li>
+          <li>
+            Finds indoor air quality hacks for your home with a physical indoor PM2.5 model:
+            windows, cooking, heaters, incense and a purifier, with live what-if controls.
+          </li>
+          <li>
+            Ranks sustainable alternatives for travel, cooking, heating and waste, with the CO2 each
+            one saves or costs.
+          </li>
+          <li>
+            Explains the direct impact of every choice for each person in the household: micrograms
+            of PM2.5 breathed, cigarette equivalents and kilograms of CO2 per week.
+          </li>
+          <li>
+            Google Gemini writes personal advice and answers questions, citing only facts the
+            deterministic engine computed, in six languages.
+          </li>
+        </ul>
+        <p>
+          Source code, methods and tests:
+          <a href="https://github.com/Auenchanters/Week6">github.com/Auenchanters/Week6</a>
+        </p>
       </main>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

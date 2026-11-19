@@ -86,7 +86,7 @@ export function AskPanel(props: {
             <p>
               <strong>You asked:</strong> {x.question}
             </p>
-            <p lang={profile.language}>
+            <p lang={profile.language} dir="auto">
               <span className="tag tag--ai">AI · personalized</span> {x.answer.answer}
             </p>
             <Cites ids={x.answer.cites} facts={plan.facts} />

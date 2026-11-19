@@ -39,7 +39,7 @@ export function Hero(props: {
           {worst.member.name}
         </h2>
         {summary ? (
-          <p lang={language}>
+          <p lang={language} dir="auto">
             <span className="tag tag--ai">AI · personalized</span> {summary}
           </p>
         ) : top ? (

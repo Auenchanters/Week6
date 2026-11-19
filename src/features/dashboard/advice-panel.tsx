@@ -75,7 +75,7 @@ export function AdvicePanel(props: {
         {error ? <p className="field__error">{error}</p> : null}
       </div>
       {advice ? (
-        <div className="advice" lang={language}>
+        <div className="advice" lang={language} dir="auto">
           <p className="tag tag--ai">AI · personalized</p>
           <p className="advice__summary">{advice.summary}</p>
           {SECTIONS.map(({ key, title }) => (
