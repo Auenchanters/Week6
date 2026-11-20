@@ -141,21 +141,6 @@ export const COST_LABELS: Readonly<Record<Cost, string>> = {
   high: 'Higher cost',
 };
 
-const SWAP_TEXT: Readonly<Record<string, string>> = {
-  'home.purifier.small': 'Run a small air purifier all day',
-  'home.purifier.medium': 'Run a medium air purifier all day',
-  'home.purifier.large': 'Run a large air purifier all day',
-  'home.exhaust-fan': 'Switch on the kitchen exhaust fan while cooking',
-  'home.no-incense': 'Skip incense indoors',
-  'home.smoke-free': 'Keep the home smoke-free',
-  'cooking.lpg': 'Cook on LPG instead',
-  'cooking.induction': 'Cook on induction instead',
-  'heating.electric': 'Heat with an electric heater instead of burning fuel',
-  'heating.fewer-hours': 'Run the heater 2 hours less (draught-proof, add layers)',
-  'protection.n95': 'Wear a fitted N95 mask outdoors',
-  'community.compost': 'Compost garden and kitchen waste instead of burning it',
-};
-
 /** "Nani" or "Kabir and Asha": who an activity is for. */
 export function whoIs(memberIds: readonly string[], members: readonly Member[]): string {
   return members
@@ -164,14 +149,14 @@ export function whoIs(memberIds: readonly string[], members: readonly Member[]):
     .join(' and ');
 }
 
-/** One plain sentence saying what a measured change is (the engine's label for an id not worded here). */
+/** One plain sentence saying what a measured change is: a trip names who and how; the rest use the engine's own wording, the same the AI reads. */
 export function swapTitle(swap: Swap, members: readonly Member[]): string {
   const { trip } = swap;
   if (trip) {
     const kind = KIND_LABELS[trip.activity.kind].toLowerCase();
     return `Take the ${kind} (${whoIs(trip.activity.memberIds, members)}) ${MODE_LABELS[trip.to]} instead of ${MODE_LABELS[trip.from]}`;
   }
-  return SWAP_TEXT[swap.id] ?? swap.label;
+  return swap.label;
 }
 
 /** The plan day's name, by its index into the 48-hour forecast. */

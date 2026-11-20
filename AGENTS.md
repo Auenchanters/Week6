@@ -20,18 +20,18 @@ prompt, and do not let model text reach the page without passing through `server
 
 ## Map
 
-| Path                                  | What lives there                                                                                 | Read first                                              |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| `src/domain/`                         | the engine: AQI, indoor mass balance, exposure, routine, swaps, guidance, `buildDayPlan`         | `src/domain/plan.ts`, then `src/domain/coefficients.ts` |
-| `src/shared/`                         | zod contracts shared by browser and server, limits, sanitizer, `Result`, sample household        | `src/shared/schema.ts`                                  |
-| `src/ai/`                             | the system instructions and the prompt builders (facts sent as JSON data)                        | `src/ai/prompt.ts`                                      |
-| `src/features/`                       | React features: `setup`, `dashboard`, `household` (local storage), `client` (typed API calls)    | `src/features/dashboard/dashboard.tsx`                  |
-| `src/ui/`                             | shared fields, number formats and labels                                                         |                                                         |
-| `server/`                             | the request handler and everything behind it: gates, Open-Meteo, Gemini, answer salvage          | `server/handler.ts`                                     |
-| `api/`                                | `api/[route].ts`, the one Vercel function: a two-line call to `handlerFromEnv` (`server/env.ts`) |                                                         |
-| `tests/unit`, `tests/ui`, `tests/e2e` | Vitest (Node), Vitest + Testing Library (jsdom), Playwright with axe                             | [docs/TESTING.md](docs/TESTING.md)                      |
-| `scripts/`                            | dev server, bundle budget, runtime smoke, live smoke, preflight                                  |                                                         |
-| `docs/`                               | methods (every coefficient and its source), architecture, testing, code quality                  |                                                         |
+| Path                                  | What lives there                                                                                                  | Read first                                              |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `src/domain/`                         | the engine: AQI, indoor mass balance, exposure, routine, swaps, guidance, `buildDayPlan`                          | `src/domain/plan.ts`, then `src/domain/coefficients.ts` |
+| `src/shared/`                         | zod contracts (profile, forecast, AI) shared by browser and server, limits, sanitizer, `Result`, sample household | `src/shared/schema.ts`                                  |
+| `src/ai/`                             | the system instructions and the prompt builders (facts sent as JSON data)                                         | `src/ai/prompt.ts`                                      |
+| `src/features/`                       | React features: `setup`, `dashboard`, `household` (local storage), `client` (typed API calls)                     | `src/features/dashboard/dashboard.tsx`                  |
+| `src/ui/`                             | shared fields, number formats and labels                                                                          |                                                         |
+| `server/`                             | the request handler and everything behind it: gates, Open-Meteo, Gemini, answer salvage                           | `server/handler.ts`                                     |
+| `api/`                                | `api/[route].ts`, the one Vercel function: a two-line call to `handlerFromEnv` (`server/env.ts`)                  |                                                         |
+| `tests/unit`, `tests/ui`, `tests/e2e` | Vitest (Node), Vitest + Testing Library (jsdom), Playwright with axe                                              | [docs/TESTING.md](docs/TESTING.md)                      |
+| `scripts/`                            | dev server, bundle budget, runtime smoke, live smoke, preflight                                                   |                                                         |
+| `docs/`                               | methods (every coefficient and its source), architecture, testing, code quality                                   |                                                         |
 
 ## Commands
 

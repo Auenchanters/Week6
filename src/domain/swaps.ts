@@ -113,7 +113,7 @@ const burnsToHeat = (p: Profile): boolean =>
 const HOME_RULES: readonly HomeRule[] = [
   {
     id: 'home.exhaust-fan',
-    label: 'Running a kitchen exhaust fan while cooking',
+    label: 'Switch on the kitchen exhaust fan while cooking',
     category: 'home',
     cost: 'low',
     when: (p) => burnsToCook(p) && !p.home.exhaustFan,
@@ -121,7 +121,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'cooking.lpg',
-    label: 'Cooking on LPG instead',
+    label: 'Cook on LPG instead',
     category: 'cooking',
     cost: 'medium',
     when: (p) => p.home.cookingFuel === 'biomass' || p.home.cookingFuel === 'kerosene',
@@ -129,7 +129,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'cooking.induction',
-    label: 'Cooking on induction instead',
+    label: 'Cook on induction instead',
     category: 'cooking',
     cost: 'medium',
     when: burnsToCook,
@@ -137,7 +137,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'heating.electric',
-    label: 'Heating with an electric heater instead of burning fuel',
+    label: 'Heat with an electric heater instead of burning fuel',
     category: 'heating',
     cost: 'medium',
     when: burnsToHeat,
@@ -145,7 +145,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'heating.fewer-hours',
-    label: 'Running the heater 2 hours less (draught-proofing, warmer layers)',
+    label: 'Run the heater 2 hours less (draught-proof, add layers)',
     category: 'heating',
     cost: 'low',
     when: (p) => p.home.heater !== 'none' && p.home.heaterHours > HEATER_HOURS_CUT,
@@ -153,7 +153,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'protection.n95',
-    label: 'Wearing a fitted N95 mask outdoors',
+    label: 'Wear a fitted N95 mask outdoors',
     category: 'protection',
     cost: 'low',
     when: (p) => !p.home.n95Outdoors && p.activities.length > 0,
@@ -161,7 +161,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'home.no-incense',
-    label: 'Not burning incense indoors',
+    label: 'Skip incense indoors',
     category: 'home',
     cost: 'free',
     when: (p) => p.home.incense,
@@ -169,7 +169,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'home.smoke-free',
-    label: 'Keeping the home smoke-free',
+    label: 'Keep the home smoke-free',
     category: 'home',
     cost: 'free',
     when: (p) => p.home.smokingIndoors,
@@ -177,7 +177,7 @@ const HOME_RULES: readonly HomeRule[] = [
   },
   {
     id: 'community.compost',
-    label: 'Composting garden and kitchen waste instead of burning it',
+    label: 'Compost garden and kitchen waste instead of burning it',
     category: 'community',
     cost: 'free',
     when: (p) => p.home.burnsWaste,
@@ -192,7 +192,7 @@ const travelChanges = (profile: Profile): Candidate[] =>
     .flatMap((trip) =>
       modeAlternatives(trip).map((mode): Candidate => ({
         id: `travel.${trip.id}.${mode}`,
-        label: `Taking ${mode} instead of ${trip.mode}`,
+        label: `Take ${mode} instead of ${trip.mode}`,
         category: 'travel',
         cost: 'free',
         trip: { activity: trip, from: trip.mode, to: mode },
@@ -200,31 +200,31 @@ const travelChanges = (profile: Profile): Candidate[] =>
       })),
     );
 
-/** A purifier sized for the home, when it has none. */
-function purifierChange(home: Home): Candidate[] {
-  if (home.purifier !== 'none') return [];
-  const size = purifierFor(home.areaM2);
-  return [
-    {
-      id: `home.purifier.${size}`,
-      label: `Running a ${size} air purifier (${String(PURIFIER_CADR_M3_PER_H[size])} m³/h CADR) all day`,
-      category: 'home',
-      cost: size === 'small' ? 'medium' : 'high',
-      apply: withHome({ purifier: size }),
-    },
-  ];
-}
+/** One purifier row per size; only the size that fits a home without one applies. */
+const PURIFIER_RULES: readonly HomeRule[] = (['small', 'medium', 'large'] as const).map(
+  (size): HomeRule => ({
+    id: `home.purifier.${size}`,
+    label: `Run a ${size} air purifier (${String(PURIFIER_CADR_M3_PER_H[size])} m³/h CADR) all day`,
+    category: 'home',
+    cost: size === 'small' ? 'medium' : 'high',
+    when: (p) => p.home.purifier === 'none' && purifierFor(p.home.areaM2) === size,
+    patch: () => ({ purifier: size }),
+  }),
+);
 
 /** Every change that applies to `profile`. */
 export function candidates(profile: Profile): Candidate[] {
-  const homeChanges = HOME_RULES.filter((rule) => rule.when(profile)).map((rule): Candidate => ({
-    id: rule.id,
-    label: rule.label,
-    category: rule.category,
-    cost: rule.cost,
-    apply: withHome(rule.patch(profile.home)),
-  }));
-  return [...travelChanges(profile), ...purifierChange(profile.home), ...homeChanges];
+  const rules = [...PURIFIER_RULES, ...HOME_RULES];
+  const homeChanges = rules
+    .filter((rule) => rule.when(profile))
+    .map((rule): Candidate => ({
+      id: rule.id,
+      label: rule.label,
+      category: rule.category,
+      cost: rule.cost,
+      apply: withHome(rule.patch(profile.home)),
+    }));
+  return [...travelChanges(profile), ...homeChanges];
 }
 
 /** Whether a measured change improves lungs, climate or street air by enough to show. */

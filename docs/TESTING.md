@@ -31,19 +31,19 @@ Coverage says a line ran; mutation testing says a test would notice if the line 
 `src/domain` (flipped comparisons, swapped operators, emptied strings and arrays) and runs the
 engine's own tests (`vitest.mutation.config.ts`) against each one. The run fails below 90%.
 
-Last run, 2026-11-19: **96.9%**. Of 890 valid mutants, 851 were killed and 11 timed out (the mutant made a
-test hang, which counts as caught); 28 survived. Another 40 did not compile and are not counted.
+Last run, 2026-11-20: **96.1%**. Of 899 valid mutants, 862 were killed and 2 timed out (the mutant made a
+test hang, which counts as caught); 35 survived. Another 46 did not compile and are not counted.
 
 | Module                       | Score |
 | ---------------------------- | ----- |
-| `src/domain/coefficients.ts` | 100%  |
 | `src/domain/guidance.ts`     | 100%  |
 | `src/domain/household.ts`    | 100%  |
-| `src/domain/plan.ts`         | 98.0% |
-| `src/domain/swaps.ts`        | 96.7% |
+| `src/domain/plan.ts`         | 97.2% |
+| `src/domain/swaps.ts`        | 96.8% |
 | `src/domain/exposure.ts`     | 96.5% |
-| `src/domain/aqi.ts`          | 96.1% |
 | `src/domain/indoor.ts`       | 93.9% |
+| `src/domain/coefficients.ts` | 93.8% |
+| `src/domain/aqi.ts`          | 93.3% |
 | `src/domain/routine.ts`      | 92.2% |
 
 Most survivors are equivalent mutants: changes that cannot alter any output. For example, heater
