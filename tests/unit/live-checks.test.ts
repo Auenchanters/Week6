@@ -21,6 +21,7 @@ import {
 import { createHandler } from '../../server/handler.js';
 import type { Generate } from '../../server/provider.js';
 import { sampleForecast } from '../../server/sample-forecast.js';
+import { factsFor } from '../../src/ai/facts.js';
 import { factIds } from '../../src/ai/prompt.js';
 import { buildDayPlan } from '../../src/domain/plan.js';
 import { SAMPLE_PROFILE } from '../../src/shared/samples.js';
@@ -42,7 +43,8 @@ const aiAdvice = {
   indoor: [{ text: 'Run a purifier.', cites: ['air.day'] }],
   alternatives: [],
 };
-const IDS = factIds(buildDayPlan(SAMPLE_PROFILE, sampleForecast('2026-11-18', '2026-11-19'), 0));
+const PLAN = buildDayPlan(SAMPLE_PROFILE, sampleForecast('2026-11-18', '2026-11-19'), 0);
+const IDS = factIds(factsFor(PLAN, SAMPLE_PROFILE));
 
 const html = readFileSync('index.html', 'utf8');
 const vercel = z

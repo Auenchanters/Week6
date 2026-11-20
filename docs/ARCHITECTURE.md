@@ -53,7 +53,8 @@ the architecture test fails the build if it does.
 | `src/domain/routine.ts`      | moves flexible activities to cleaner hours; best airing time           |
 | `src/domain/swaps.ts`        | the choices catalog, each measured by re-running the model             |
 | `src/domain/guidance.ts`     | CPCB-based precautions per member                                      |
-| `src/domain/plan.ts`         | composes all of the above into a `DayPlan` with citable facts          |
+| `src/domain/plan.ts`         | composes all of the above into a `DayPlan`, numbers only               |
+| `src/ai/facts.ts`            | words a `DayPlan` as numbered facts, the only figures the AI may cite  |
 
 Every "impact" figure is a difference between two runs of the same model, so changes are always
 comparable and trade-offs (lungs vs CO2) are visible instead of netted.

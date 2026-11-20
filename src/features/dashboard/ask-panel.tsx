@@ -6,6 +6,7 @@
  * Never does: ask on its own; suggestions only fill the box.
  */
 import { useState, type SyntheticEvent, type ReactElement } from 'react';
+import type { Fact } from '../../ai/facts.js';
 import type { DayPlan } from '../../domain/plan.js';
 import { LIMITS } from '../../shared/limits.js';
 import type { Profile } from '../../shared/schema.js';
@@ -33,12 +34,14 @@ function suggestionsFor(profile: Profile, plan: DayPlan): string[] {
 export function AskPanel(props: {
   readonly profile: Profile;
   readonly plan: DayPlan;
+  /** The plan's facts, which every answer cites. */
+  readonly facts: readonly Fact[];
   readonly exchanges: readonly Exchange[];
   readonly loading: boolean;
   readonly error: string;
   readonly onAsk: (question: string) => void;
 }): ReactElement {
-  const { profile, plan, exchanges, loading, error, onAsk } = props;
+  const { profile, plan, facts, exchanges, loading, error, onAsk } = props;
   const [question, setQuestion] = useState('');
   const submit = (event: SyntheticEvent): void => {
     event.preventDefault();
@@ -89,7 +92,7 @@ export function AskPanel(props: {
             <p lang={profile.language} dir="auto">
               <span className="tag tag--ai">{AI_TAG}</span> {x.answer.answer}
             </p>
-            <Cites ids={x.answer.cites} facts={plan.facts} />
+            <Cites ids={x.answer.cites} facts={facts} />
           </div>
         ))}
       </div>

@@ -35,7 +35,7 @@ costs.
 | indoor air quality hacks             | a physical indoor model (infiltration, windows, cooking, heaters, incense, purifier); live what-if controls                                           | `src/domain/indoor.ts`, dashboard "Home air"   |
 | sustainable alternatives             | transport, heating, cooking and waste swaps with CO2 per week, trade-offs shown with both signs                                                       | `src/domain/swaps.ts`, dashboard "Choices"     |
 | tailored to location and lifestyle   | place search, the household's own activities, home and habits                                                                                         | setup flow                                     |
-| clearly explaining the direct impact | µg of PM2.5 per person per day, cigarette equivalents, kg CO2 per week, g of street PM2.5; AI advice cites the exact facts                            | `src/domain/plan.ts`, AI panel                 |
+| clearly explaining the direct impact | µg of PM2.5 per person per day, cigarette equivalents, kg CO2 per week, g of street PM2.5; AI advice cites the exact facts                            | `src/domain/plan.ts`, `src/ai/facts.ts`        |
 | GenAI-powered                        | Gemini writes personal advice and answers questions, grounded in cited engine facts, in six languages                                                 | `src/ai/prompt.ts`, `server/handler.ts`        |
 
 ## Approach and Logic

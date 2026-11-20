@@ -15,6 +15,7 @@ import {
   buildAskPrompt,
   factIds,
 } from '../../src/ai/prompt.js';
+import { factsFor } from '../../src/ai/facts.js';
 import { buildDayPlan } from '../../src/domain/plan.js';
 import { LIMITS } from '../../src/shared/limits.js';
 import { SAMPLE_PROFILE } from '../../src/shared/samples.js';
@@ -28,6 +29,7 @@ const corpus = z
 
 const forecast = sampleForecast('2026-11-18', '2026-11-19');
 const plan = buildDayPlan(SAMPLE_PROFILE, forecast, 0);
+const facts = factsFor(plan, SAMPLE_PROFILE);
 
 const userBlock = z.strictObject({
   language: z.string(),
@@ -92,7 +94,7 @@ describe('the system instructions', () => {
       ...SAMPLE_PROFILE.members.map((m) => m.name),
       SAMPLE_PROFILE.place.name,
       plan.date,
-      ...plan.facts.map((f) => f.text),
+      ...facts.map((f) => f.text),
     ];
     for (const system of [ADVICE_INSTRUCTION, ASK_INSTRUCTION])
       for (const value of private_) expect(system).not.toContain(value);
@@ -122,8 +124,8 @@ describe('the user message', () => {
         conditions: m.conditions,
       })),
     );
-    expect(block.facts.map((f) => f.id)).toEqual(plan.facts.map((f) => f.id));
-    for (const id of factIds(plan)) expect(prompt.user).toContain(`"id":"${id}"`);
+    expect(block.facts.map((f) => f.id)).toEqual(facts.map((f) => f.id));
+    for (const id of factIds(facts)) expect(prompt.user).toContain(`"id":"${id}"`);
     expect(block.question).toBeUndefined();
   });
 
@@ -180,16 +182,16 @@ describe('hostile text', () => {
 
 describe('factIds', () => {
   it('puts air.day first and lists each plan fact once', () => {
-    const ids = factIds(plan);
+    const ids = factIds(facts);
     expect(ids[0]).toBe('air.day');
-    expect(ids).toHaveLength(plan.facts.length);
+    expect(ids).toHaveLength(facts.length);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('moves air.day to the front when the plan lists it later', () => {
-    const reordered = { ...plan, facts: [...plan.facts].reverse() };
+  it('moves air.day to the front when the facts list it later', () => {
+    const reordered = [...facts].reverse();
     expect(factIds(reordered)[0]).toBe('air.day');
-    expect([...factIds(reordered)].sort()).toEqual([...factIds(plan)].sort());
+    expect([...factIds(reordered)].sort()).toEqual([...factIds(facts)].sort());
   });
 });
 

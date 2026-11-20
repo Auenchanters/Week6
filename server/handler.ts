@@ -11,6 +11,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { factsFor } from '../src/ai/facts.js';
 import { buildAdvicePrompt, buildAskPrompt, factIds, type Prompt } from '../src/ai/prompt.js';
 import { buildDayPlan, type DayPlan } from '../src/domain/plan.js';
 import {
@@ -211,7 +212,7 @@ function modelRoute<B extends AdviceRequest, T>(
   return async (deps, call) => {
     const body = await readJsonBody(call.request, schema);
     const plan = buildDayPlan(body.profile, body.forecast, body.dayIndex);
-    return answer(deps, call, { ...toJob(plan, body), ids: factIds(plan) });
+    return answer(deps, call, { ...toJob(plan, body), ids: factIds(factsFor(plan, body.profile)) });
   };
 }
 

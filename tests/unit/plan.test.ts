@@ -1,6 +1,7 @@
 /**
- * Covers the day plan end to end on the sample household and forecast: dates, facts with stable
- * ids, per-person before/after doses, the worst hour, and the degenerate empty forecast.
+ * Covers the day plan end to end on the sample household and forecast: dates, per-person
+ * before/after doses, the worst hour, and the degenerate empty forecast. Its wording as facts is
+ * covered in facts.test.ts.
  */
 import { describe, expect, it } from 'vitest';
 import { buildDayPlan } from '../../src/domain/plan.js';
@@ -12,8 +13,6 @@ import { flatForecast, profileWith } from '../support/profiles.js';
 const forecast = sampleForecast('2026-11-18', '2026-11-19');
 const today = buildDayPlan(SAMPLE_PROFILE, forecast, 0);
 const tomorrow = buildDayPlan(SAMPLE_PROFILE, forecast, 1);
-
-const FACT_ID = /^(air\.|indoor\.|member\.|guidance\.|move\.|airing$|swap\.|footprint$)/u;
 
 describe('buildDayPlan on the sample household', () => {
   it('takes the right day from the forecast', () => {
@@ -40,30 +39,6 @@ describe('buildDayPlan on the sample household', () => {
     expect(today.worst.hour).toBe(8);
   });
 
-  it('emits unique fact ids, all with a documented prefix', () => {
-    for (const plan of [today, tomorrow]) {
-      const ids = plan.facts.map((f) => f.id);
-      expect(new Set(ids).size).toBe(ids.length);
-      for (const id of ids) expect(id).toMatch(FACT_ID);
-      for (const fact of plan.facts) expect(fact.text.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('states one member and one guidance fact per person, a footprint and the key air facts', () => {
-    const ids = today.facts.map((f) => f.id);
-    for (const m of SAMPLE_PROFILE.members) {
-      expect(ids).toContain(`member.${m.id}`);
-      expect(ids).toContain(`guidance.${m.id}`);
-    }
-    expect(ids).toEqual(
-      expect.arrayContaining(['air.day', 'air.cleanest', 'air.worst', 'indoor.mean', 'footprint']),
-    );
-    expect(ids).toContain('airing');
-    expect(ids.some((id) => id.startsWith('move.'))).toBe(true);
-    expect(ids.some((id) => id.startsWith('swap.'))).toBe(true);
-    expect(ids.at(-1)).toBe('footprint');
-  });
-
   it('never makes anyone worse off after the suggested routine', () => {
     for (const person of [...today.people, ...tomorrow.people])
       expect(person.after.doseUg).toBeLessThanOrEqual(person.before.doseUg + 1e-9);
@@ -75,10 +50,6 @@ describe('buildDayPlan on the sample household', () => {
     expect(kabir?.actions).toContain('keep-medicines-handy');
     expect(today.people).toHaveLength(4);
   });
-
-  it('matches the recorded facts text', () => {
-    expect(today.facts.map((f) => `${f.id}: ${f.text}`)).toMatchSnapshot();
-  });
 });
 
 describe('buildDayPlan edge cases', () => {
@@ -88,24 +59,12 @@ describe('buildDayPlan edge cases', () => {
     expect(plan.date).toBe('');
     expect(plan.worst).toEqual({ hour: 0, pm25: 0 });
     expect(plan.day.value).toBe(0);
-    expect(plan.facts.map((f) => f.id)).toContain('footprint');
   });
 
   it('keeps the earliest hour as worst on a tie and reports no airing saving when windows are closed', () => {
     const plan = buildDayPlan(profileWith({ home: { windows: 'closed' } }), flatForecast(80), 0);
     expect(plan.worst).toEqual({ hour: 0, pm25: 80 });
     expect(plan.airing.savedUg).toBe(0);
-    expect(plan.facts.map((f) => f.id)).not.toContain('airing');
-  });
-
-  it('words each swap with its direction, cost and street PM', () => {
-    const texts = today.facts.filter((f) => f.id.startsWith('swap.')).map((f) => f.text);
-    expect(texts.some((t) => t.includes('µg less PM2.5 breathed') && t.includes('Cost:'))).toBe(
-      true,
-    );
-    expect(texts.some((t) => t.includes('kg more CO2'))).toBe(true);
-    expect(texts.some((t) => t.startsWith('Switching the '))).toBe(true);
-    expect(texts.some((t) => t.includes('into the street a week'))).toBe(true);
   });
 
   it('works for a household with no activities and no conditions', () => {

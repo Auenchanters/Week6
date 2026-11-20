@@ -22,6 +22,7 @@ import { createHandler, type HandlerOptions } from '../../server/handler.js';
 import type { Generate, Generation } from '../../server/provider.js';
 import { createMemoryLimits, type Limits } from '../../server/rate-limit.js';
 import { sampleForecast } from '../../server/sample-forecast.js';
+import { factsFor } from '../../src/ai/facts.js';
 import { buildAdvicePrompt, buildAskPrompt, factIds } from '../../src/ai/prompt.js';
 import { buildDayPlan } from '../../src/domain/plan.js';
 import { SAMPLE_PROFILE } from '../../src/shared/samples.js';
@@ -51,7 +52,8 @@ const QUESTION = 'Should Zebracorn walk to school tomorrow?';
 const ASK_BODY = { ...PLAN_BODY, question: QUESTION };
 const MODEL_SECRET = 'ModelSecretPhrase';
 const PLAN = buildDayPlan(SAMPLE_PROFILE, FORECAST, 0);
-const IDS = factIds(PLAN);
+const FACTS = factsFor(PLAN, SAMPLE_PROFILE);
+const IDS = factIds(FACTS);
 
 const ADVICE = {
   summary: `Air is poor. ${MODEL_SECRET}`,
@@ -933,7 +935,7 @@ describe('log privacy', () => {
       'MODEL-GARBAGE-TEXT',
       'unexpected key',
       'Asia/Kolkata',
-      PLAN.facts[0]?.text ?? 'missing fact',
+      FACTS[0]?.text ?? 'missing fact',
     ];
     for (const secret of secrets) expect(everything).not.toContain(secret);
   });

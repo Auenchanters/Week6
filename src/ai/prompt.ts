@@ -12,6 +12,7 @@
  */
 import { z } from 'zod';
 import type { DayPlan } from '../domain/plan.js';
+import { factsFor, type Fact } from './facts.js';
 import { LIMITS } from '../shared/limits.js';
 import { sanitizeText } from '../shared/sanitize-text.js';
 import type { FactIds, Language, Profile } from '../shared/schema.js';
@@ -59,9 +60,9 @@ export interface Prompt {
   readonly schema: z.core.JSONSchema.BaseSchema;
 }
 
-/** The plan's fact ids as a non-empty tuple (`air.day` is always first). */
-export function factIds(plan: DayPlan): FactIds {
-  return ['air.day', ...plan.facts.map((f) => f.id).filter((id) => id !== 'air.day')];
+/** The facts' ids as a non-empty tuple (`air.day`, which every plan states, is always first). */
+export function factIds(facts: readonly Fact[]): FactIds {
+  return ['air.day', ...facts.map((f) => f.id).filter((id) => id !== 'air.day')];
 }
 
 const NAME_MAX = LIMITS.profile.memberNameMax;
@@ -94,7 +95,7 @@ function data(plan: DayPlan, profile: Profile): Record<string, unknown> {
       age: m.age,
       conditions: m.conditions,
     })),
-    facts: plan.facts.map((f) => ({ id: f.id, text: sanitizeText(f.text, 400) })),
+    facts: factsFor(plan, profile).map((f) => ({ id: f.id, text: sanitizeText(f.text, 400) })),
   };
 }
 

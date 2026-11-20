@@ -6,7 +6,8 @@
  * metadata the panels share.
  * Never does: build the plan (the household state does) or call the AI by itself.
  */
-import { useState, type ReactElement } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
+import { factsFor } from '../../ai/facts.js';
 import type { DayIndex, DayPlan } from '../../domain/plan.js';
 import type { AiMeta, Forecast, Home, Profile } from '../../shared/schema.js';
 import '../../styles/dashboard.css';
@@ -47,6 +48,8 @@ export interface DashboardProps {
 export default function Dashboard(props: DashboardProps): ReactElement {
   const { profile, forecast, plan, onDay, onEdit, onSave } = props;
   const [meta, setMeta] = useState<AiMeta | null>(null);
+  // The facts the AI cites, worded once per plan for both panels.
+  const facts = useMemo(() => factsFor(plan, profile), [plan, profile]);
   const input = { profile, forecast, plan };
   const advice = useAdvice(input, setMeta);
   const ask = useAsk(input, setMeta);
@@ -86,7 +89,7 @@ export default function Dashboard(props: DashboardProps): ReactElement {
       <Ledger key={plan.dayIndex} plan={plan} members={profile.members} />
       <div className="pair">
         <AdvicePanel
-          plan={plan}
+          facts={facts}
           language={profile.language}
           advice={advice.advice}
           loading={advice.loading}
@@ -99,6 +102,7 @@ export default function Dashboard(props: DashboardProps): ReactElement {
         <AskPanel
           profile={profile}
           plan={plan}
+          facts={facts}
           exchanges={ask.exchanges}
           loading={ask.loading}
           error={ask.error}

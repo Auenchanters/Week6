@@ -12,6 +12,7 @@
 import { z } from 'zod';
 import { sampleDates } from '../server/air.js';
 import { sampleForecast } from '../server/sample-forecast.js';
+import { factsFor } from '../src/ai/facts.js';
 import { factIds } from '../src/ai/prompt.js';
 import { buildDayPlan } from '../src/domain/plan.js';
 import { SAMPLE_PROFILE } from '../src/shared/samples.js';
@@ -37,7 +38,8 @@ const requestFor = (now: Date) => {
   const forecast = sampleForecast(...sampleDates(now));
   return { profile: SAMPLE_PROFILE, forecast, dayIndex: 0 } as const;
 };
-const sampleIds = factIds(buildDayPlan(SAMPLE_PROFILE, requestFor(new Date(0)).forecast, 0));
+const samplePlan = buildDayPlan(SAMPLE_PROFILE, requestFor(new Date(0)).forecast, 0);
+const sampleIds = factIds(factsFor(samplePlan, SAMPLE_PROFILE));
 const planResponse = z.strictObject({ advice: adviceSchemaFor(sampleIds), meta: aiMetaSchema });
 const healthResponse = z.strictObject({ status: z.literal('ok'), ai: z.literal('configured') });
 const errorResponse = z.object({ error: z.object({ code: z.string().regex(/^[A-Z_]+$/u) }) });

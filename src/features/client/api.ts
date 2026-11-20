@@ -8,6 +8,7 @@
  */
 import { z } from 'zod';
 import type { DayPlan } from '../../domain/plan.js';
+import { factsFor } from '../../ai/facts.js';
 import { factIds } from '../../ai/prompt.js';
 import { err, ok, type Result } from '../../shared/result.js';
 import {
@@ -128,7 +129,7 @@ export async function requestAdvice(
   return receive(
     '/api/plan',
     post({ profile, forecast, dayIndex: plan.dayIndex }, signal),
-    z.object({ advice: adviceSchemaFor(factIds(plan)), meta: aiMetaSchema }),
+    z.object({ advice: adviceSchemaFor(factIds(factsFor(plan, profile))), meta: aiMetaSchema }),
   );
 }
 
@@ -141,6 +142,6 @@ export async function requestAnswer(
   return receive(
     '/api/ask',
     post({ profile, forecast, dayIndex: plan.dayIndex, question }, signal),
-    z.object({ answer: askAnswerSchemaFor(factIds(plan)), meta: aiMetaSchema }),
+    z.object({ answer: askAnswerSchemaFor(factIds(factsFor(plan, profile))), meta: aiMetaSchema }),
   );
 }

@@ -5,7 +5,7 @@
  * Never does: show a fact the plan does not hold (unknown ids are skipped).
  */
 import { useState, type ReactElement } from 'react';
-import type { Fact } from '../../domain/plan.js';
+import type { Fact } from '../../ai/facts.js';
 
 /** The cited facts of one AI text, as expandable chips. */
 export function Cites(props: {

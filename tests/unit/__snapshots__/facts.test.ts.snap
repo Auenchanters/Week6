@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`buildDayPlan on the sample household > matches the recorded facts text 1`] = `
+exports[`factsFor on the sample household > matches the recorded facts text 1`] = `
 [
   "air.day: 2026-11-18 India AQI 384 (very-poor; an index, not µg/m³), driven by pm25; US AQI for PM2.5 308.",
   "air.cleanest: Cleanest daytime hours: 14:00–16:00, PM2.5 about 125 µg/m³.",

@@ -6,7 +6,7 @@
  */
 import type { ReactElement } from 'react';
 import { LANGUAGE_NAMES } from '../../ai/prompt.js';
-import type { DayPlan } from '../../domain/plan.js';
+import type { Fact } from '../../ai/facts.js';
 import { LANGUAGES, type Advice, type CitedItem, type Language } from '../../shared/schema.js';
 import { SelectField } from '../../ui/fields.js';
 import { AI_TAG } from '../../ui/labels.js';
@@ -22,7 +22,7 @@ const SECTIONS = [
 function Section(props: {
   readonly title: string;
   readonly items: readonly CitedItem[];
-  readonly plan: DayPlan;
+  readonly facts: readonly Fact[];
 }): ReactElement | null {
   if (props.items.length === 0) return null;
   return (
@@ -32,7 +32,7 @@ function Section(props: {
         {props.items.map((item) => (
           <li key={item.text}>
             <p>{item.text}</p>
-            <Cites ids={item.cites} facts={props.plan.facts} />
+            <Cites ids={item.cites} facts={props.facts} />
           </li>
         ))}
       </ul>
@@ -42,7 +42,8 @@ function Section(props: {
 
 /** The advice panel. */
 export function AdvicePanel(props: {
-  readonly plan: DayPlan;
+  /** The plan's facts, which every advice item cites. */
+  readonly facts: readonly Fact[];
   readonly language: Language;
   readonly advice: Advice | null;
   readonly loading: boolean;
@@ -50,7 +51,7 @@ export function AdvicePanel(props: {
   readonly onLanguage: (language: Language) => void;
   readonly onFetch: () => void;
 }): ReactElement {
-  const { plan, language, advice, loading, error, onLanguage, onFetch } = props;
+  const { facts, language, advice, loading, error, onLanguage, onFetch } = props;
   return (
     <section aria-labelledby="advice-title">
       <h2 id="advice-title">Personal advice</h2>
@@ -80,7 +81,7 @@ export function AdvicePanel(props: {
           <p className="tag tag--ai">{AI_TAG}</p>
           <p className="advice__summary">{advice.summary}</p>
           {SECTIONS.map(({ key, title }) => (
-            <Section key={key} title={title} items={advice[key]} plan={plan} />
+            <Section key={key} title={title} items={advice[key]} facts={facts} />
           ))}
         </div>
       ) : null}
