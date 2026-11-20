@@ -12,11 +12,12 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { buildAdvicePrompt, buildAskPrompt, factIds, type Prompt } from '../src/ai/prompt.js';
-import { buildDayPlan } from '../src/domain/plan.js';
+import { buildDayPlan, type DayPlan } from '../src/domain/plan.js';
 import {
   adviceRequestSchema,
   aiMetaSchema,
   askRequestSchema,
+  type AdviceRequest,
   type AiMeta,
   type FactIds,
 } from '../src/shared/schema.js';
@@ -80,7 +81,8 @@ interface Deps extends Omit<HandlerOptions, 'model' | 'now' | 'limits' | 'air'> 
   readonly limits: Limits;
   readonly air: AirClient;
   readonly withCapacity: <T>(task: () => Promise<T>) => Promise<T>;
-  readonly cache: AnswerCache;
+  /** Parsed answers by prompt; call metadata is never cached, so each reply carries its own. */
+  readonly cache: AnswerCache<Read<unknown>>;
 }
 
 /** One request in flight: the request, its id, and the facts its log line will carry. */
@@ -103,6 +105,22 @@ interface Generated {
   readonly generation: Generation;
   readonly latencyMs: number;
 }
+
+/** What one reply cost: the model call's latency and tokens. */
+interface Usage {
+  readonly latencyMs: number;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+}
+
+/** A reply from the cache made no model call, so it cost nothing. */
+const FROM_CACHE: Usage = { latencyMs: 0, inputTokens: 0, outputTokens: 0 };
+
+const usageOf = ({ generation, latencyMs }: Generated): Usage => ({
+  latencyMs,
+  inputTokens: generation.inputTokens,
+  outputTokens: generation.outputTokens,
+});
 
 /** A route's work once its gates have passed. */
 type RouteHandler = (deps: Deps, call: InFlight) => Promise<Response>;
@@ -148,12 +166,10 @@ async function generateFor(deps: Deps, call: InFlight, prompt: Prompt): Promise<
  * The call metadata returned with an answer. Checked at runtime too: a bad model id or token count
  * must not reach the client's store.
  */
-function callMeta(deps: Deps, call: InFlight, made: Generated, dropped: number): AiMeta {
+function callMeta(deps: Deps, call: InFlight, usage: Usage, dropped: number): AiMeta {
   const meta = aiMetaSchema.safeParse({
     model: deps.model,
-    latencyMs: made.latencyMs,
-    inputTokens: made.generation.inputTokens,
-    outputTokens: made.generation.outputTokens,
+    ...usage,
     dropped,
     requestId: call.requestId,
   });
@@ -163,20 +179,40 @@ function callMeta(deps: Deps, call: InFlight, made: Generated, dropped: number):
 
 /**
  * The answer to `job`: from the cache when the same prompt was answered before, otherwise one
- * model call read by `job.parse`. The body holds the parsed value under `job.key` plus call metadata.
+ * model call read by `job.parse`. The body holds the parsed value under `job.key` plus this
+ * request's own metadata (a cached reply reports its own request id and no model cost).
  */
 async function answer<T>(deps: Deps, call: InFlight, job: Job<T>): Promise<Response> {
   const cached = deps.cache.get(job.prompt);
   if (cached !== undefined) {
     call.trace.cached = true;
-    return noStoreJson(cached);
+    const meta = callMeta(deps, call, FROM_CACHE, cached.dropped);
+    return noStoreJson({ [job.key]: cached.value, meta });
   }
   const made = await generateFor(deps, call, job.prompt);
   const read = job.parse(made.generation.text, job.ids);
   if (read.dropped > 0) call.trace.dropped = read.dropped;
-  const body = { [job.key]: read.value, meta: callMeta(deps, call, made, read.dropped) };
-  deps.cache.set(job.prompt, body);
-  return noStoreJson(body);
+  deps.cache.set(job.prompt, read);
+  return noStoreJson({
+    [job.key]: read.value,
+    meta: callMeta(deps, call, usageOf(made), read.dropped),
+  });
+}
+
+/**
+ * A route that asks the model: read and validate the body, rebuild the day plan from it with the
+ * same engine the browser ran, then answer the job `toJob` phrases from that plan. The facts the
+ * model may cite are always the plan's own.
+ */
+function modelRoute<B extends AdviceRequest, T>(
+  schema: z.ZodType<B>,
+  toJob: (plan: DayPlan, body: B) => Omit<Job<T>, 'ids'>,
+): RouteHandler {
+  return async (deps, call) => {
+    const body = await readJsonBody(call.request, schema);
+    const plan = buildDayPlan(body.profile, body.forecast, body.dayIndex);
+    return answer(deps, call, { ...toJob(plan, body), ids: factIds(plan) });
+  };
 }
 
 /** Each route's work. Health is answered before any gate; the others pass `admit` first. */
@@ -199,18 +235,16 @@ const HANDLERS: Readonly<Record<Route, RouteHandler>> = {
       throw new AppError('PLACES_UNAVAILABLE');
     }
   },
-  '/api/plan': async (deps, call) => {
-    const { profile, forecast, dayIndex } = await readJsonBody(call.request, adviceRequestSchema);
-    const plan = buildDayPlan(profile, forecast, dayIndex);
-    const prompt = buildAdvicePrompt(plan, profile);
-    return answer(deps, call, { prompt, ids: factIds(plan), parse: parseAdvice, key: 'advice' });
-  },
-  '/api/ask': async (deps, call) => {
-    const body = await readJsonBody(call.request, askRequestSchema);
-    const plan = buildDayPlan(body.profile, body.forecast, body.dayIndex);
-    const prompt = buildAskPrompt(plan, body.profile, body.question);
-    return answer(deps, call, { prompt, ids: factIds(plan), parse: parseAskAnswer, key: 'answer' });
-  },
+  '/api/plan': modelRoute(adviceRequestSchema, (plan, { profile }) => ({
+    prompt: buildAdvicePrompt(plan, profile),
+    parse: parseAdvice,
+    key: 'advice',
+  })),
+  '/api/ask': modelRoute(askRequestSchema, (plan, { profile, question }) => ({
+    prompt: buildAskPrompt(plan, profile, question),
+    parse: parseAskAnswer,
+    key: 'answer',
+  })),
 };
 
 /**

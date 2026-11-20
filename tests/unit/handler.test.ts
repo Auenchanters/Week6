@@ -486,7 +486,12 @@ describe('POST /api/plan: the model call', () => {
     info.mockClear();
     const second = await handler(plan());
     expect(second.status).toBe(200);
-    expect(await second.json()).toEqual(await first.json());
+    const reply = z.looseObject({ advice: z.unknown(), meta: aiMetaSchema });
+    const [one, two] = [reply.parse(await first.json()), reply.parse(await second.json())];
+    expect(two.advice).toEqual(one.advice);
+    // The metadata is this request's own: a new id, and no model call, so no time or tokens.
+    expect(two.meta.requestId).not.toBe(one.meta.requestId);
+    expect(two.meta).toMatchObject({ latencyMs: 0, inputTokens: 0, outputTokens: 0 });
     expect(generate).toHaveBeenCalledTimes(1);
     expect(lastRequestLog()).toMatchObject({ route: '/api/plan', status: 200, cached: true });
   });
@@ -519,17 +524,21 @@ describe('POST /api/plan: the model call', () => {
   });
 
   // 201 full engine runs: about 2 s alone, more on a loaded machine, so it gets its own timeout.
-  it('forgets cached answers once it holds 200, and not before', { timeout: 30_000 }, async () => {
-    const generate = vi.fn<Generate>(() => Promise.resolve(generation(JSON.stringify(ANSWER))));
-    const handler = handlerWith({ generate, limits: unlimited });
-    for (let i = 0; i < 201; i += 1)
-      await handler(ask({ ...ASK_BODY, question: `Question ${String(i)}?` }));
-    expect(generate).toHaveBeenCalledTimes(201);
-    await handler(ask({ ...ASK_BODY, question: 'Question 200?' }));
-    expect(generate).toHaveBeenCalledTimes(201);
-    await handler(ask({ ...ASK_BODY, question: 'Question 0?' }));
-    expect(generate).toHaveBeenCalledTimes(202);
-  });
+  it(
+    'drops the least recently used answer once it holds 200, and not before',
+    { timeout: 30_000 },
+    async () => {
+      const generate = vi.fn<Generate>(() => Promise.resolve(generation(JSON.stringify(ANSWER))));
+      const handler = handlerWith({ generate, limits: unlimited });
+      for (let i = 0; i < 201; i += 1)
+        await handler(ask({ ...ASK_BODY, question: `Question ${String(i)}?` }));
+      expect(generate).toHaveBeenCalledTimes(201);
+      await handler(ask({ ...ASK_BODY, question: 'Question 200?' }));
+      expect(generate).toHaveBeenCalledTimes(201);
+      await handler(ask({ ...ASK_BODY, question: 'Question 0?' }));
+      expect(generate).toHaveBeenCalledTimes(202);
+    },
+  );
 
   it.each([
     ['a spent quota', 429],
