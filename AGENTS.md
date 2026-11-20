@@ -77,7 +77,7 @@ npm run preflight      # repo size, single branch, file hygiene, README headings
 
 - A new engine number: add it to `src/domain`, cite its source, expose it as a fact in `src/ai/facts.ts`,
   and test it against an external truth (a published table or an analytic solution) where one exists.
-- A new route: add it to `ROUTES` and `HANDLERS` in `server/handler.ts`, a schema in
+- A new route: add it to `ROUTES` and `HANDLERS` in `server/routes.ts`, a schema in
   `src/shared/schema.ts`, and rows in the handler test matrix. `api/[route].ts` needs no change.
 - A prompt change: update `src/ai/prompt.ts` and its injection-corpus test; the instruction text is
   shown to users in the "AI at work" panel, so keep it readable.

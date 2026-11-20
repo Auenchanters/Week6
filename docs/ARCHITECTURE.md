@@ -65,7 +65,10 @@ comparable and trade-offs (lungs vs CO2) are visible instead of netted.
 | ------------------------ | --------------------------------------------------------------------------------------------- |
 | `api/[route].ts`         | the one Vercel function; every `/api/<route>` reaches the same handler                        |
 | `server/env.ts`          | the handler as the deployment configures it: settings, daily budget, shared or memory limits  |
-| `server/handler.ts`      | the route table (`HANDLERS`), gates, model call, one log line per request                     |
+| `server/handler.ts`      | resolves the route and method, runs the gates, dispatches, one log line per request           |
+| `server/routes.ts`       | the five routes: method, strict query checks, and each route's work                           |
+| `server/model-reply.ts`  | a model route's reply: cache, budget, concurrency gate, call metadata                         |
+| `server/context.ts`      | the dependencies and request-in-flight shapes every route receives                            |
 | `server/model-call.ts`   | turns a failed model call into a public code and a log-safe status and reason                 |
 | `server/answer-cache.ts` | answers to repeated prompts, keyed by a SHA-256 of the prompt                                 |
 | `server/request.ts`      | content type, origin allowlist, bounded body, strict schema                                   |

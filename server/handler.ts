@@ -1,63 +1,24 @@
 /**
- * The API's one Fetch handler, shared by the Vercel functions and the local dev server.
- * Does: route five endpoints, `GET /api/health`, `GET /api/air` (the 48-hour forecast for a place),
- * `GET /api/places` (place search), `POST /api/plan` (AI advice for a day plan) and `POST /api/ask`
- * (one grounded question); run each route's gate (method, content type, origin, rate limit, size,
- * JSON, schema); rebuild the day plan with the same engine the browser runs, so the facts sent to
- * the model are computed here from validated numbers; answer a repeated prompt from a cache with
- * no model call; count a real call against the daily budget and make it inside the concurrency
- * gate; return sanitized, fact-checked answers with call metadata; write one log line per request.
- * Never does: retry a model call, return a provider message, or log household or model text.
+ * The API's one Fetch handler, shared by the Vercel function and the local dev server.
+ * Does: resolve the route and its method, run the gates (content type and origin for POSTs, then
+ * the per-client rate limit), hand the request to its route (server/routes.ts), turn anything
+ * thrown into a catalogued error, and write one log line per request.
+ * Never does: return a provider message, or log household or model text.
  */
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
-import { factsFor } from '../src/ai/facts.js';
-import { buildAdvicePrompt, buildAskPrompt, factIds, type Prompt } from '../src/ai/prompt.js';
-import { buildDayPlan, type DayPlan } from '../src/domain/plan.js';
-import {
-  adviceRequestSchema,
-  aiMetaSchema,
-  askRequestSchema,
-  type AdviceRequest,
-  type AiMeta,
-  type FactIds,
-} from '../src/shared/schema.js';
 import { createAirClient, type AirClient } from './air.js';
-import { createAnswerCache, type AnswerCache } from './answer-cache.js';
-import { parseAdvice, parseAskAnswer, type Read } from './answer.js';
+import { createAnswerCache } from './answer-cache.js';
 import { createInferenceGate } from './capacity.js';
+import type { Deps, InFlight } from './context.js';
 import { AppError, errorResponse, type ErrorCode } from './errors.js';
-import { logRequest, type RequestFacts, type Route } from './log.js';
-import { guardedGeneration } from './model-call.js';
-import { DEFAULT_MODEL, type Generate, type Generation } from './provider.js';
+import { logRequest, type Route } from './log.js';
+import { DEFAULT_MODEL, type Generate } from './provider.js';
 import { clientId, createMemoryLimits, type Limits } from './rate-limit.js';
-import { readJsonBody, readQuery, validateTransport } from './request.js';
+import { validateTransport } from './request.js';
+import { HANDLERS, isRoute, ROUTES } from './routes.js';
 
-/** Each route and the one method it accepts. */
-const ROUTES = {
-  '/api/plan': 'POST',
-  '/api/ask': 'POST',
-  '/api/air': 'GET',
-  '/api/places': 'GET',
-  '/api/health': 'GET',
-} as const satisfies Record<Route, string>;
-const isRoute = (path: string): path is Route => Object.hasOwn(ROUTES, path);
-const NO_STORE = { 'Cache-Control': 'no-store' };
 /** Answers kept for repeated prompts; a repeat costs no model call. */
 const ANSWER_CACHE_MAX = 200;
-
-/** A decimal number written out in full: blank or `1e3` is rejected, not read as 0 or 1000. */
-const decimal = (min: number, max: number) =>
-  z
-    .string()
-    .regex(/^-?\d{1,3}(\.\d{1,6})?$/u)
-    .transform(Number)
-    .pipe(z.number().min(min).max(max));
-const airQuery = z.strictObject({
-  lat: decimal(-90, 90),
-  lon: decimal(-180, 180),
-});
-const placesQuery = z.strictObject({ q: z.string().trim().min(2).max(60) });
 
 /** Dependencies, injectable so tests run offline and deterministically. */
 export interface HandlerOptions {
@@ -75,178 +36,17 @@ export interface HandlerOptions {
   readonly air?: AirClient;
 }
 
-/** One handler's resolved dependencies and per-instance state, shared by every request it serves. */
-interface Deps extends Omit<HandlerOptions, 'model' | 'now' | 'limits' | 'air'> {
-  readonly model: string;
-  readonly now: () => Date;
-  readonly limits: Limits;
-  readonly air: AirClient;
-  readonly withCapacity: <T>(task: () => Promise<T>) => Promise<T>;
-  /** Parsed answers by prompt; call metadata is never cached, so each reply carries its own. */
-  readonly cache: AnswerCache<Read<unknown>>;
-}
-
-/** One request in flight: the request, its id, and the facts its log line will carry. */
-interface InFlight {
-  readonly request: Request;
-  readonly requestId: string;
-  readonly trace: RequestFacts;
-}
-
-/** One model job: the prompt, the fact ids its answer may cite, how to read it, and its body key. */
-interface Job<T> {
-  readonly prompt: Prompt;
-  readonly ids: FactIds;
-  readonly parse: (text: string, ids: FactIds) => Read<T>;
-  readonly key: 'advice' | 'answer';
-}
-
-/** A finished model call and how long it took, in whole milliseconds. */
-interface Generated {
-  readonly generation: Generation;
-  readonly latencyMs: number;
-}
-
-/** What one reply cost: the model call's latency and tokens. */
-interface Usage {
-  readonly latencyMs: number;
-  readonly inputTokens: number;
-  readonly outputTokens: number;
-}
-
-/** A reply from the cache made no model call, so it cost nothing. */
-const FROM_CACHE: Usage = { latencyMs: 0, inputTokens: 0, outputTokens: 0 };
-
-const usageOf = ({ generation, latencyMs }: Generated): Usage => ({
-  latencyMs,
-  inputTokens: generation.inputTokens,
-  outputTokens: generation.outputTokens,
-});
-
-/** A route's work once its gates have passed. */
-type RouteHandler = (deps: Deps, call: InFlight) => Promise<Response>;
-
 /** The response a request ends with, and the public error code when it failed. */
 interface Outcome {
   readonly response: Response;
   readonly code?: ErrorCode;
 }
 
-const noStoreJson = (body: unknown): Response => Response.json(body, { headers: NO_STORE });
-
 /** The public error for anything thrown while handling `request`; a client abort wins. */
 function toAppError(error: unknown, request: Request): AppError {
   if (request.signal.aborted) return new AppError('REQUEST_CANCELLED');
   return error instanceof AppError ? error : new AppError('INTERNAL_ERROR');
 }
-
-/**
- * One real model call for `prompt`: counted against the daily budget before it is made (the
- * provider bills a failed call too) and made inside the concurrency gate. Returns the generation
- * and its latency, with token counts noted on the trace.
- */
-async function generateFor(deps: Deps, call: InFlight, prompt: Prompt): Promise<Generated> {
-  const { generate } = deps;
-  if (!generate) throw new AppError('AI_NOT_CONFIGURED');
-  const { request, trace } = call;
-  request.signal.throwIfAborted();
-  await deps.limits.aiCall(deps.now().getTime());
-  const started = performance.now();
-  const generation = await guardedGeneration(
-    () => deps.withCapacity(() => generate(prompt, request.signal)),
-    trace,
-  );
-  trace.inputTokens = generation.inputTokens;
-  trace.outputTokens = generation.outputTokens;
-  // A cut-off answer rarely parses; if one does, what it holds is still used.
-  if (generation.truncated === true) trace.event = 'truncated';
-  return { generation, latencyMs: Math.round(performance.now() - started) };
-}
-
-/**
- * The call metadata returned with an answer. Checked at runtime too: a bad model id or token count
- * must not reach the client's store.
- */
-function callMeta(deps: Deps, call: InFlight, usage: Usage, dropped: number): AiMeta {
-  const meta = aiMetaSchema.safeParse({
-    model: deps.model,
-    ...usage,
-    dropped,
-    requestId: call.requestId,
-  });
-  if (!meta.success) throw new AppError('INVALID_RESPONSE');
-  return meta.data;
-}
-
-/**
- * The answer to `job`: from the cache when the same prompt was answered before, otherwise one
- * model call read by `job.parse`. The body holds the parsed value under `job.key` plus this
- * request's own metadata (a cached reply reports its own request id and no model cost).
- */
-async function answer<T>(deps: Deps, call: InFlight, job: Job<T>): Promise<Response> {
-  const cached = deps.cache.get(job.prompt);
-  if (cached !== undefined) {
-    call.trace.cached = true;
-    const meta = callMeta(deps, call, FROM_CACHE, cached.dropped);
-    return noStoreJson({ [job.key]: cached.value, meta });
-  }
-  const made = await generateFor(deps, call, job.prompt);
-  const read = job.parse(made.generation.text, job.ids);
-  if (read.dropped > 0) call.trace.dropped = read.dropped;
-  deps.cache.set(job.prompt, read);
-  return noStoreJson({
-    [job.key]: read.value,
-    meta: callMeta(deps, call, usageOf(made), read.dropped),
-  });
-}
-
-/**
- * A route that asks the model: read and validate the body, rebuild the day plan from it with the
- * same engine the browser ran, then answer the job `toJob` phrases from that plan. The facts the
- * model may cite are always the plan's own.
- */
-function modelRoute<B extends AdviceRequest, T>(
-  schema: z.ZodType<B>,
-  toJob: (plan: DayPlan, body: B) => Omit<Job<T>, 'ids'>,
-): RouteHandler {
-  return async (deps, call) => {
-    const body = await readJsonBody(call.request, schema);
-    const plan = buildDayPlan(body.profile, body.forecast, body.dayIndex);
-    return answer(deps, call, { ...toJob(plan, body), ids: factIds(factsFor(plan, body.profile)) });
-  };
-}
-
-/** Each route's work. Health is answered before any gate; the others pass `admit` first. */
-const HANDLERS: Readonly<Record<Route, RouteHandler>> = {
-  '/api/health': (deps) =>
-    Promise.resolve(
-      noStoreJson({ status: 'ok', ai: deps.generate ? 'configured' : 'not_configured' }),
-    ),
-  '/api/air': async (deps, { request, trace }) => {
-    const { lat, lon } = readQuery(request, airQuery);
-    const forecast = await deps.air.forecast(lat, lon);
-    trace.source = forecast.source;
-    return noStoreJson(forecast);
-  },
-  '/api/places': async (deps, { request }) => {
-    const { q } = readQuery(request, placesQuery);
-    try {
-      return noStoreJson({ places: await deps.air.places(q) });
-    } catch {
-      throw new AppError('PLACES_UNAVAILABLE');
-    }
-  },
-  '/api/plan': modelRoute(adviceRequestSchema, (plan, { profile }) => ({
-    prompt: buildAdvicePrompt(plan, profile),
-    parse: parseAdvice,
-    key: 'advice',
-  })),
-  '/api/ask': modelRoute(askRequestSchema, (plan, { profile, question }) => ({
-    prompt: buildAskPrompt(plan, profile, question),
-    parse: parseAskAnswer,
-    key: 'answer',
-  })),
-};
 
 /**
  * The gates every route but health passes. Transport checks run first for POSTs, so a cross-site

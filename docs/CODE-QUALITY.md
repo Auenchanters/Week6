@@ -53,9 +53,9 @@ not compute.
 - Functions stay small: lint fails any function above complexity 10, 15 statements, 80 lines, four
   parameters, three levels of nesting or three nested callbacks, and any file above 250 lines of code.
   When a function grew past that, it was split by responsibility: the Gemini adapter is
-  `withOverloadRetry` and `toGeneration`; the request handler is a route table (`HANDLERS`) over
-  small functions, with model-failure handling in `server/model-call.ts` and the answer cache in
-  `server/answer-cache.ts`; each setup editor is a list of cards built from named parts
+  `withOverloadRetry` and `toGeneration`; the server is a dispatcher (`server/handler.ts`) over a route
+  table (`server/routes.ts`), with the model reply in `server/model-reply.ts`, failure handling in
+  `server/model-call.ts` and the answer cache in `server/answer-cache.ts`; each setup editor is a list of cards built from named parts
   (`KindAndMode`, `WhoGoes`, `Timing`, `FlexibleWindow`; `NameAndAge`, `Conditions`, `AwayHours`).
 
 ## 4. Known limitations
