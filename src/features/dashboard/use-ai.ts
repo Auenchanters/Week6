@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DayPlan } from '../../domain/plan.js';
 import type { Advice, AiMeta, AskAnswer } from '../../shared/schema.js';
-import { requestAdvice, requestAnswer, type PlanInput } from '../client/api.js';
+import { requestAdvice, requestAnswer, type ApiResult, type PlanInput } from '../client/api.js';
 
 /** One question and the AI's answer to it. */
 export interface Exchange {
@@ -43,29 +43,55 @@ function useCancel(): () => AbortSignal {
   };
 }
 
+/** One AI action for the current plan: its state, and a runner that starts a call and files the result. */
+function usePlanAction<T>(
+  input: PlanInput,
+  onMeta: (meta: AiMeta) => void,
+  empty: T,
+): {
+  state: Slot<T>;
+  run: <R extends { meta: AiMeta }>(
+    call: (signal: AbortSignal) => Promise<ApiResult<R>>,
+    keep: (value: R, before: T) => T,
+  ) => void;
+} {
+  const [slot, setSlot] = useState<Slot<T>>(idle(empty));
+  const next = useCancel();
+  // A result made for another plan is hidden, so stale advice never sits beside new numbers.
+  const state = slot.plan === input.plan ? slot : idle(empty);
+  const run = <R extends { meta: AiMeta }>(
+    call: (signal: AbortSignal) => Promise<ApiResult<R>>,
+    keep: (value: R, before: T) => T,
+  ): void => {
+    const { plan } = input;
+    setSlot({ ...state, plan, loading: true, error: '' });
+    const signal = next();
+    void call(signal).then((result) => {
+      if (signal.aborted) return;
+      if (!result.ok) {
+        setSlot({ ...state, plan, loading: false, error: result.error.message });
+        return;
+      }
+      onMeta(result.value.meta);
+      setSlot({ plan, loading: false, error: '', value: keep(result.value, state.value) });
+    });
+  };
+  return { state, run };
+}
+
 /** Advice for the plan, fetched on demand. */
 export function useAdvice(
   input: PlanInput,
   onMeta: (meta: AiMeta) => void,
 ): { advice: Advice | null; loading: boolean; error: string; fetchAdvice: () => void } {
-  const [slot, setSlot] = useState<Slot<Advice | null>>(idle(null));
-  const next = useCancel();
-  const mine = slot.plan === input.plan ? slot : idle(null);
+  const { state, run } = usePlanAction<Advice | null>(input, onMeta, null);
   const fetchAdvice = (): void => {
-    const { plan } = input;
-    setSlot({ plan, loading: true, error: '', value: null });
-    const signal = next();
-    void requestAdvice(input, signal).then((result) => {
-      if (signal.aborted) return;
-      if (result.ok) onMeta(result.value.meta);
-      setSlot(
-        result.ok
-          ? { plan, loading: false, error: '', value: result.value.advice }
-          : { plan, loading: false, error: result.error.message, value: null },
-      );
-    });
+    run(
+      (signal) => requestAdvice(input, signal),
+      ({ advice }) => advice,
+    );
   };
-  return { advice: mine.value, loading: mine.loading, error: mine.error, fetchAdvice };
+  return { advice: state.value, loading: state.loading, error: state.error, fetchAdvice };
 }
 
 /** Questions and answers about the plan, asked on demand. */
@@ -73,27 +99,12 @@ export function useAsk(
   input: PlanInput,
   onMeta: (meta: AiMeta) => void,
 ): { exchanges: readonly Exchange[]; loading: boolean; error: string; ask: (q: string) => void } {
-  const [slot, setSlot] = useState<Slot<readonly Exchange[]>>(idle([]));
-  const next = useCancel();
-  const mine = slot.plan === input.plan ? slot : idle([]);
+  const { state, run } = usePlanAction<readonly Exchange[]>(input, onMeta, []);
   const ask = (question: string): void => {
-    const { plan } = input;
-    setSlot({ ...mine, plan, loading: true, error: '' });
-    const signal = next();
-    void requestAnswer(input, question, signal).then((result) => {
-      if (signal.aborted) return;
-      if (result.ok) onMeta(result.value.meta);
-      setSlot(
-        result.ok
-          ? {
-              plan,
-              loading: false,
-              error: '',
-              value: [...mine.value, { question, answer: result.value.answer }],
-            }
-          : { ...mine, plan, loading: false, error: result.error.message },
-      );
-    });
+    run(
+      (signal) => requestAnswer(input, question, signal),
+      ({ answer }, before) => [...before, { question, answer }],
+    );
   };
-  return { exchanges: mine.value, loading: mine.loading, error: mine.error, ask };
+  return { exchanges: state.value, loading: state.loading, error: state.error, ask };
 }
