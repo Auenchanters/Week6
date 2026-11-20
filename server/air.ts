@@ -73,6 +73,26 @@ export function fillGaps(values: readonly (number | null)[]): number[] | null {
   });
 }
 
+/** One hour's six concentrations, in the order of `toForecast`'s columns. */
+type Row = [number, number, number, number, number, number];
+
+/** Every column had a value for this hour. */
+const isFullRow = (row: readonly (number | undefined)[]): row is Row =>
+  row.every((value) => value !== undefined);
+
+/**
+ * Hour `i` of the six columns, or nothing when a column is shorter than the time axis. A missing
+ * reading is never read as 0 µg/m³: the forecast then falls short of 48 hours, fails its schema
+ * and the bundled sample is used instead.
+ */
+function hourAt(columns: readonly (readonly number[])[], time: string, i: number): AirHour[] {
+  const row = columns.map((column) => column[i]);
+  if (!isFullRow(row)) return [];
+  const [pm25, pm10, no2, o3, co, so2] = row;
+  // Open-Meteo reports CO in µg/m³; NAQI breakpoints are in mg/m³.
+  return [{ time, pm25, pm10, no2, o3, co: co / 1000, so2 }];
+}
+
 /** Open-Meteo's JSON as our forecast, or `null` when anything about it is off. */
 export function toForecast(json: unknown): Forecast | null {
   const parsed = openMeteoAir.safeParse(json);
@@ -86,18 +106,10 @@ export function toForecast(json: unknown): Forecast | null {
     fillGaps(hourly.carbon_monoxide),
     fillGaps(hourly.sulphur_dioxide),
   ] as const;
-  const [pm25, pm10, no2, o3, co, so2] = columns;
-  if (!pm25 || !pm10 || !no2 || !o3 || !co || !so2) return null;
-  const hours = hourly.time.map((time, i): AirHour => ({
-    time,
-    pm25: pm25[i] ?? 0,
-    pm10: pm10[i] ?? 0,
-    no2: no2[i] ?? 0,
-    o3: o3[i] ?? 0,
-    // Open-Meteo reports CO in µg/m³; NAQI breakpoints are in mg/m³.
-    co: (co[i] ?? 0) / 1000,
-    so2: so2[i] ?? 0,
-  }));
+  const present = columns.filter((column) => column !== null);
+  // A column with no reading at all cannot be filled from its neighbours.
+  if (present.length < columns.length) return null;
+  const hours = hourly.time.flatMap((time, i) => hourAt(present, time, i));
   const forecast = forecastSchema.safeParse({ source: 'open-meteo', timezone, hours });
   return forecast.success ? forecast.data : null;
 }

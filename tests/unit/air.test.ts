@@ -114,24 +114,17 @@ describe('toForecast', () => {
     expect(toForecast(openMeteo({ sulphur_dioxide: empty }))).toBeNull();
   });
 
-  it('fills a column shorter than the time axis with 0, then lets the schema judge', () => {
+  it('is null when a column is shorter than the time axis, never reading a gap as 0', () => {
     const pm2_5 = Array.from({ length: 47 }, () => 80);
-    const forecast = toForecast(openMeteo({ pm2_5 }));
-    expect(forecast?.hours[46]?.pm25).toBe(80);
-    expect(forecast?.hours[47]?.pm25).toBe(0);
+    expect(toForecast(openMeteo({ pm2_5 }))).toBeNull();
   });
 
-  it.each([
-    ['pm10', 'pm10'],
-    ['nitrogen_dioxide', 'no2'],
-    ['ozone', 'o3'],
-    ['carbon_monoxide', 'co'],
-    ['sulphur_dioxide', 'so2'],
-  ] as const)('zero-fills a short %s column too', (column, field) => {
-    const forecast = toForecast(openMeteo({ [column]: [7] }));
-    expect(forecast?.hours[0]?.[field]).toBe(column === 'carbon_monoxide' ? 0.007 : 7);
-    expect(forecast?.hours[1]?.[field]).toBe(0);
-  });
+  it.each(['pm10', 'nitrogen_dioxide', 'ozone', 'carbon_monoxide', 'sulphur_dioxide'] as const)(
+    'is null for a short %s column too',
+    (column) => {
+      expect(toForecast(openMeteo({ [column]: [7] }))).toBeNull();
+    },
+  );
 
   it('is null for an implausible concentration or a malformed time', () => {
     const wild = Array.from({ length: HOURS }, () => 5001);
