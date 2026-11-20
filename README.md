@@ -13,7 +13,8 @@ costs.
 **Live:** https://clearday-week6.vercel.app · **Methods:** [docs/METHODS.md](docs/METHODS.md) ·
 **Architecture:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · **Code quality:**
 [docs/CODE-QUALITY.md](docs/CODE-QUALITY.md) · **Testing:** [docs/TESTING.md](docs/TESTING.md) ·
-**Security:** [SECURITY.md](SECURITY.md) · **Repo guide for agents:** [AGENTS.md](AGENTS.md)
+**Security:** [SECURITY.md](SECURITY.md) · **How it was built:** [docs/BUILD-NOTES.md](docs/BUILD-NOTES.md) ·
+**Repo guide for agents:** [AGENTS.md](AGENTS.md)
 
 > Rule of the house: **the engine computes, the AI explains.** A deterministic, tested engine
 > produces every number. Google Gemini turns those numbers into advice and may only cite them.

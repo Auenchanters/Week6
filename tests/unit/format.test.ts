@@ -10,6 +10,7 @@ import { SAMPLE_PROFILE } from '../../src/shared/samples.js';
 import {
   cigarettes,
   clock,
+  clockTime,
   dayLabel,
   hourSpan,
   micrograms,
@@ -49,6 +50,7 @@ describe('format', () => {
 
   it('writes a plan date', () => {
     expect(dayLabel('2026-11-18')).toBe('Wed, 18 Nov');
+    expect(clockTime('2026-11-18T08:35:00Z')).toMatch(/^\d{2}:\d{2}$/u);
   });
 });
 

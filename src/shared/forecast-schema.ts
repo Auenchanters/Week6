@@ -25,6 +25,8 @@ const airHourSchema = z.strictObject({
 export const forecastSchema = z.strictObject({
   source: z.enum(['open-meteo', 'sample']),
   timezone: z.string().min(1).max(64),
+  /** When the server fetched live data (UTC), so the page can say how current it is; absent for the sample. */
+  fetchedAt: z.iso.datetime().optional(),
   hours: z.array(airHourSchema).length(LIMITS.forecast.hours),
 });
 

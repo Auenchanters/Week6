@@ -39,6 +39,15 @@ export function cigarettes(n: number): string {
   return `${text} ${text === '1.0' ? 'cigarette' : 'cigarettes'}`;
 }
 
+const timeFormat = new Intl.DateTimeFormat('en-IN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** "14:05" for an ISO instant, on the reader's own clock: how current the data is for them. */
+export const clockTime = (iso: string): string => timeFormat.format(new Date(iso));
+
 /** "Wed 18 Nov" for `2026-11-18`. */
 export const dayLabel = (isoDate: string): string =>
   dateFormat.format(new Date(`${isoDate}T00:00:00Z`));

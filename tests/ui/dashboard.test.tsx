@@ -326,6 +326,18 @@ describe('when the forecast fails', () => {
     expect(await screen.findByRole('heading', { level: 2, name: /^Today's air/u })).toBeTruthy();
   });
 
+  it('names a live source and says when its data was fetched', async () => {
+    const fetchedAt = '2026-11-18T08:35:00.000Z';
+    stubApi({ '/api/air': () => json({ ...sampleOkObject(), fetchedAt }) });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'See the sample family' }));
+    expect(await screen.findByText('Live · Open-Meteo (CAMS)')).toBeTruthy();
+    const stamp = screen.getByText(/^\d{2}:\d{2}$/u, { selector: 'time' });
+    expect(stamp.getAttribute('datetime')).toBe(fetchedAt);
+    expect(stamp.parentElement?.textContent).toMatch(/^Updated /u);
+  });
+
   it('shows a loading line while the forecast is on its way', async () => {
     stubApi({ '/api/air': () => new Promise<Response>(() => undefined) });
     const user = userEvent.setup();
@@ -337,6 +349,11 @@ describe('when the forecast fails', () => {
 
 /** The sample forecast, imported lazily so the failing-route test reads top to bottom. */
 function sampleOk(): unknown {
+  return sampleOkObject();
+}
+
+/** A live-labelled 48-hour forecast. */
+function sampleOkObject(): Record<string, unknown> {
   return {
     source: 'open-meteo',
     timezone: 'Asia/Kolkata',

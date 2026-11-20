@@ -1,11 +1,11 @@
 /**
  * The top of the dashboard: the place (the page's `h1`), the plan day's date, the data source, the
- * Today/Tomorrow switch and the way back to the household form.
+ * time the live data was fetched, the Today/Tomorrow switch and the way back to the household form.
  * Never does: fetch or compute; it only shows what the plan already holds.
  */
 import type { ReactElement } from 'react';
 import type { DayIndex, DayPlan } from '../../domain/plan.js';
-import { dayLabel } from '../../ui/format.js';
+import { clockTime, dayLabel } from '../../ui/format.js';
 import { DAY_LABELS } from '../../ui/labels.js';
 
 const DAYS: readonly DayIndex[] = [0, 1];
@@ -14,10 +14,12 @@ const DAYS: readonly DayIndex[] = [0, 1];
 export function HeaderBand(props: {
   readonly place: string;
   readonly plan: DayPlan;
+  /** When the live forecast was fetched (ISO); absent for the sample. */
+  readonly fetchedAt: string | undefined;
   readonly onDay: (day: DayIndex) => void;
   readonly onEdit: () => void;
 }): ReactElement {
-  const { place, plan, onDay, onEdit } = props;
+  const { place, plan, fetchedAt, onDay, onEdit } = props;
   return (
     <header className="band">
       <div>
@@ -25,8 +27,13 @@ export function HeaderBand(props: {
         <p className="band__meta">
           <time dateTime={plan.date}>{dayLabel(plan.date)}</time>
           <span className="badge" data-source={plan.source}>
-            {plan.source === 'sample' ? 'Sample data' : 'Live · Open-Meteo'}
+            {plan.source === 'sample' ? 'Sample data' : 'Live · Open-Meteo (CAMS)'}
           </span>
+          {fetchedAt ? (
+            <span>
+              Updated <time dateTime={fetchedAt}>{clockTime(fetchedAt)}</time>
+            </span>
+          ) : null}
         </p>
       </div>
       <div className="band__controls">

@@ -176,6 +176,14 @@ describe('the forecast client', () => {
     expect(init?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it('stamps a live forecast with its fetch time, and keeps that stamp on a cache hit', async () => {
+    const { client, advance } = clientWith(fetching(() => Promise.resolve(ok(openMeteo()))));
+    const first = await client.forecast(28.61, 77.21);
+    expect(first.fetchedAt).toBe(START.toISOString());
+    advance(10 * MINUTE);
+    expect((await client.forecast(28.61, 77.21)).fetchedAt).toBe(START.toISOString());
+  });
+
   it('serves a repeat from the cache for 30 minutes, then asks again', async () => {
     const fetchImpl = fetching(() => Promise.resolve(ok(openMeteo())));
     const { client, advance } = clientWith(fetchImpl);

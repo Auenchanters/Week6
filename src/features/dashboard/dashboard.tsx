@@ -58,7 +58,13 @@ export default function Dashboard(props: DashboardProps): ReactElement {
   };
   return (
     <div className={`dash cat-${plan.day.category}`}>
-      <HeaderBand place={profile.place.name} plan={plan} onDay={onDay} onEdit={onEdit} />
+      <HeaderBand
+        place={profile.place.name}
+        plan={plan}
+        fetchedAt={forecast.fetchedAt}
+        onDay={onDay}
+        onEdit={onEdit}
+      />
       <nav className="menu" aria-label="On this page">
         <ul>
           {MENU.map(([id, label]) => (

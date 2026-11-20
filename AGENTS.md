@@ -31,7 +31,7 @@ prompt, and do not let model text reach the page without passing through `server
 | `api/`                                | `api/[route].ts`, the one Vercel function: a two-line call to `handlerFromEnv` (`server/env.ts`)                  |                                                         |
 | `tests/unit`, `tests/ui`, `tests/e2e` | Vitest (Node), Vitest + Testing Library (jsdom), Playwright with axe                                              | [docs/TESTING.md](docs/TESTING.md)                      |
 | `scripts/`                            | dev server, bundle budget, runtime smoke, live smoke, preflight                                                   |                                                         |
-| `docs/`                               | methods (every coefficient and its source), architecture, testing, code quality                                   |                                                         |
+| `docs/`                               | methods (every coefficient and its source), architecture, testing, code quality, build notes                      |                                                         |
 
 ## Commands
 

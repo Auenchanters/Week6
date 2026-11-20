@@ -158,10 +158,12 @@ export function createAirClient(fetchImpl: Fetch, now: () => Date = () => new Da
         // Unreachable, slow or failing upstream: the sample below keeps the app working.
       }
       if (!forecast) return sampleForecast(...sampleDates(now()));
+      // Stamped once at fetch, so a cached forecast keeps its true age.
+      const stamped = { ...forecast, fetchedAt: new Date(at).toISOString() };
       // shortcut: a full cache is dropped whole rather than evicted by age; fine at this traffic.
       if (cache.size >= CACHE_MAX) cache.clear();
-      cache.set(key, { at, forecast });
-      return forecast;
+      cache.set(key, { at, forecast: stamped });
+      return stamped;
     },
 
     async places(query) {
