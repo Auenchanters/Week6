@@ -65,6 +65,13 @@ describe('sanitizeText', () => {
     expect(sanitizeText('ab   cd', 3)).toBe('ab');
   });
 
+  it('cuts only between graphemes: a ZWJ family or an accented letter is kept whole or dropped', () => {
+    const family = '👩‍👩‍👧'; // 5 code points, one grapheme
+    expect(sanitizeText(`ok ${family}`, 7)).toBe('ok'); // 3 + 5 > 7: the family is dropped whole
+    expect(sanitizeText(`ok ${family}`, 8)).toBe(`ok ${family}`);
+    expect(sanitizeText('café!', 4)).toBe('caf'); // "é" as e + combining accent is 2 code points
+  });
+
   it('keeps emoji, joiners and non-Latin scripts intact', () => {
     const text = 'दिवाली मेला 🎉 حفلة 👩‍👩‍👧 தீபாவளி';
     expect(sanitizeText(text, 100)).toBe(text);

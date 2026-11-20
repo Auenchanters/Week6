@@ -4,8 +4,21 @@
  * Never does: import anything, so the domain may load it at runtime.
  */
 
-// NOTE: this counts code points, not graphemes, so a cut can still split an emoji built from
-// several code points (a family joined by ZWJ). Cutting with Intl.Segmenter would lift that.
-/** Trims `text` and keeps at most `max` code points (never half a surrogate pair), then trims the cut. */
-export const capText = (text: string, max: number): string =>
-  Array.from(text.trim()).slice(0, max).join('').trimEnd();
+/** Splits text into graphemes, what a reader sees as one character (a ZWJ family is one). */
+const GRAPHEMES = new Intl.Segmenter('en', { granularity: 'grapheme' });
+
+/**
+ * Trims `text` and keeps at most `max` code points, cutting only between graphemes: a cut never
+ * splits a surrogate pair, an accent from its letter, or a ZWJ emoji sequence. The budget stays in
+ * code points so the result is never longer than the schemas' limits; then trims the cut.
+ */
+export function capText(text: string, max: number): string {
+  let kept = '';
+  let used = 0;
+  for (const { segment } of GRAPHEMES.segment(text.trim())) {
+    used += Array.from(segment).length;
+    if (used > max) break;
+    kept += segment;
+  }
+  return kept.trimEnd();
+}
