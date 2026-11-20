@@ -68,8 +68,7 @@ describe('labels', () => {
     );
   });
 
-  it('describes a fixed change, and falls back to the engine label for an unknown one', () => {
-    expect(swapTitle(swap({ id: 'home.no-incense' }), members)).toBe('Skip incense indoors');
-    expect(swapTitle(swap({ id: 'something.new' }), members)).toBe('Engine wording');
+  it("describes any other change in the engine's own words, the same the AI reads", () => {
+    expect(swapTitle(swap({ id: 'home.no-incense' }), members)).toBe('Engine wording');
   });
 });
